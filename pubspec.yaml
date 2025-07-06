@@ -1,0 +1,114 @@
+name: utmmart
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons:
+  flutter_bloc:
+  iconsax:
+  cached_network_image:
+  capped_progress_indicator:
+  carousel_slider:
+  dartz:
+  dio:
+  equatable:
+  firebase_auth: ^5.6.2
+  firebase_core: ^3.15.1
+  flutter_native_splash: ^2.4.6
+  flutter_rating_bar:
+  get_it:
+  google_sign_in:
+  http:
+  image_picker:
+  intl:
+  logger:
+  lottie:
+  readmore:
+  shared_preferences:
+  smooth_page_indicator:
+  url_launcher:
+  flutter_launcher_icons:
+  shimmer:
+  mailer:
+  geolocator:
+  flutter_dotenv:
+  geocoding:
+  permission_handler:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+
+  # the material Icons class.
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/images/animations/
+    - assets/images/banners/
+    - assets/images/products/
+    - assets/images/reviews/
+    - assets/images/on_boarding_images/
+    - assets/images/content/
+    - assets/icons/categories/
+    - assets/icons/brands/
+    - assets/icons/payment_methods/
+    - assets/images/
+    - assets/logos/
+  fonts:
+    - family: Coolvetica
+      fonts:
+        - asset: assets/fonts/coolvetica_regular.otf
+        - asset: assets/fonts/coolvetica_regular_italic.otf
+          style: italic
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/Poppins-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: assets/fonts/Poppins-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/Poppins-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Poppins-LightItalic.ttf
+          weight: 300
+          style: italic
+
+flutter_native_splash:
+  color: "#FFFFFF"  # Background color for light theme
+  color_dark: "#000000"  # Background color for dark theme
+  image: assets/logos/utmstore-logo-black.png  # Logo for light theme
+  image_dark: assets/logos/utmstore-logo-white.png  # Logo for dark theme
+
+  android_12:
+    color: "#FFFFFF"  # Background color for Android 12 and later
+    color_dark: "#000000"  # Background color for dark mode
+    image: assets/logos/utmstore-logo-black.png  # Logo for light theme on Android 12
+    image_dark: assets/logos/utmstore-logo-white.png  # Logo for dark theme on Android 12
+
+  web: false  # Setting web to false to disable splash screen on web (optional)
+

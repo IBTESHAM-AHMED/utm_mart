@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "670440352874",
+    "project_id": "utmmart-13927",
+    "storage_bucket": "utmmart-13927.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670440352874:android:e20824688114d4bfa66e13",
+        "android_client_info": {
+          "package_name": "com.example.utmmart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnLwP9G_6HUkjYKb597oCjaHVwbVkLXDw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670440352874:android:0932a02b9ca3cf66a66e13",
+        "android_client_info": {
+          "package_name": "com.example.utmmart_01"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnLwP9G_6HUkjYKb597oCjaHVwbVkLXDw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
