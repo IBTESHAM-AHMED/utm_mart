@@ -8,8 +8,7 @@ import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/constants/text_strings.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:utmmart/core/utils/service_locator/service_locator.dart';
-import 'package:utmmart/features/auth/data/models/login_req_body.dart';
-import 'package:utmmart/features/auth/domain/usecases/login_usecase.dart';
+import 'package:utmmart/features/auth/domain/usecases/firebase_login_usecase.dart';
 import 'package:utmmart/features/auth/presentation/logic/login/login_cubit.dart';
 import 'package:utmmart/features/auth/presentation/logic/login/login_state.dart';
 import 'package:utmmart/features/auth/presentation/views/password_configuration/forget_password_view.dart';
@@ -39,12 +38,12 @@ class _LoginFormSectionState extends State<LoginFormSection> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      final loginReqBody = LoginReqBody(
-        phoneEmail: _emailController.text.trim(),
+      final params = FirebaseLoginParams(
+        email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text.trim(),
       );
 
-      context.read<LoginCubit>().login(LoginParms(loginReqBody: loginReqBody));
+      context.read<LoginCubit>().login(params);
     }
   }
 
@@ -63,12 +62,11 @@ class _LoginFormSectionState extends State<LoginFormSection> {
             context,
             MultiBlocProvider(
               providers: [
+                BlocProvider(create: (context) => getIt<NavigationMenuCubit>()),
                 BlocProvider(
-                  create: (context) => getIt<NavigationMenuCubit>(),
-                ),
-                BlocProvider(
-                  create: (context) => getIt<ShopCubit>()
-                    ..getSortedProducts(sortBy: 'rating', sortType: "desc"),
+                  create: (context) =>
+                      getIt<ShopCubit>()
+                        ..getSortedProducts(sortBy: 'rating', sortType: "desc"),
                 ),
               ],
               child: const NavigationMenu(),
@@ -84,8 +82,9 @@ class _LoginFormSectionState extends State<LoginFormSection> {
       },
       builder: (context, state) {
         return Padding(
-          padding:
-              const EdgeInsets.symmetric(vertical: TSizes.spaceBtwSections),
+          padding: const EdgeInsets.symmetric(
+            vertical: TSizes.spaceBtwSections,
+          ),
           child: Form(
             key: _formKey,
             child: Column(

@@ -1,7 +1,8 @@
 import 'package:equatable/equatable.dart';
 
 class RegisterReqBody extends Equatable {
-  final String name;
+  final String firstName;
+  final String lastName;
   final String email;
   final String password;
   final String confirmPassword; // Added confirm password
@@ -9,7 +10,8 @@ class RegisterReqBody extends Equatable {
   final String mobile; // Changed from phone to mobile
 
   const RegisterReqBody({
-    required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.email,
     required this.password,
     required this.confirmPassword, // Added confirm password
@@ -18,15 +20,23 @@ class RegisterReqBody extends Equatable {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'email': email,
-        'password': password,
-        'c_password': confirmPassword, // Include confirm password
-        'address': address,
-        'mobile': mobile, // Include mobile
-      };
+    'first_name': firstName,
+    'last_name': lastName,
+    'email': email,
+    'password': password,
+    'c_password': confirmPassword, // Include confirm password
+    'address': address,
+    'mobile': mobile, // Include mobile
+  };
 
   @override
-  List<Object?> get props =>
-      [name, email, password, confirmPassword, address, mobile]; // Updated props
+  List<Object?> get props => [
+    firstName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+    address,
+    mobile,
+  ]; // Updated props
 }

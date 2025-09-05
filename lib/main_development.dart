@@ -12,12 +12,12 @@ void main() async {
   // Initialize Firebase first
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Initialize Firebase services
-  await sl<FirebaseService>().initialize();
-
-  // Then setup dependency injection
+  // Setup dependency injection
   await setupServiceLocator();
   setupOldServiceLocator(); // Note: No await here since it's synchronous
+
+  // Initialize Firebase services
+  await sl<FirebaseService>().initialize();
 
   runApp(const TStore());
 }

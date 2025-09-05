@@ -4,6 +4,7 @@ import 'package:utmmart/core/network/dio_client.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:utmmart/features/auth/data/data_sources/auth_local_data_source.dart';
 import 'package:utmmart/features/auth/data/data_sources/auth_remote_data_source.dart';
+import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
 import 'package:utmmart/features/auth/data/repository/auth_repo_impl.dart';
 import 'package:utmmart/features/auth/domain/repository/auth_repo.dart';
 import 'package:utmmart/features/auth/domain/usecases/get_cached_user_usecase.dart';
@@ -11,6 +12,8 @@ import 'package:utmmart/features/auth/domain/usecases/is_logged_in_usecase.dart'
 import 'package:utmmart/features/auth/domain/usecases/login_usecase.dart';
 import 'package:utmmart/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:utmmart/features/auth/domain/usecases/register_usecase.dart';
+import 'package:utmmart/features/auth/domain/usecases/firebase_register_usecase.dart';
+import 'package:utmmart/features/auth/domain/usecases/firebase_login_usecase.dart';
 import 'package:utmmart/features/auth/domain/usecases/send_otp_usecase.dart';
 import 'package:utmmart/features/auth/domain/usecases/set_new_password_usecase.dart';
 import 'package:utmmart/features/auth/presentation/logic/login/login_cubit.dart';
@@ -28,6 +31,7 @@ Future<void> setupServiceLocator() async {
   // Services
   sl.registerSingleton<DioClient>(DioClient());
   sl.registerSingleton<FirebaseService>(FirebaseService());
+  sl.registerSingleton<FirebaseAuthService>(FirebaseAuthServiceImpl());
 
   // DataSources
   sl.registerSingleton<AuthRemoteDataSource>(AuthRemoteDataSourceImpl());
@@ -45,6 +49,10 @@ Future<void> setupServiceLocator() async {
   // Auth Use Cases
   sl.registerLazySingleton<LoginUsecase>(() => LoginUsecase());
   sl.registerLazySingleton<RegisterUsecase>(() => RegisterUsecase());
+  sl.registerLazySingleton<FirebaseRegisterUsecase>(
+    () => FirebaseRegisterUsecase(),
+  );
+  sl.registerLazySingleton<FirebaseLoginUsecase>(() => FirebaseLoginUsecase());
   sl.registerLazySingleton<GetCachedUserUsecase>(() => GetCachedUserUsecase());
   sl.registerLazySingleton<IsLoggedInUsecase>(() => IsLoggedInUsecase());
   sl.registerLazySingleton<LogoutUsecase>(() => LogoutUsecase());

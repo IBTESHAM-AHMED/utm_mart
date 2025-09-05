@@ -26,8 +26,8 @@ class RegisterResponse extends Equatable {
       // Status is false, parse the error messages
       return RegisterResponse(
         status: json['status'],
-        errorMessage: json['error_message'] ?? '',
-        errorMessageEn: json['error_message_en'] ?? '',
+        errorMessage: json['message'] ?? json['error_message'] ?? '',
+        errorMessageEn: json['message_en'] ?? json['error_message_en'] ?? '',
         data: null, // No user data on error
       );
     }
@@ -77,6 +77,12 @@ class RegisterUserData extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [mobile, name, email, address, profilePhotoPath, token];
+  List<Object?> get props => [
+    mobile,
+    name,
+    email,
+    address,
+    profilePhotoPath,
+    token,
+  ];
 }

@@ -6,8 +6,7 @@ import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/constants/text_strings.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:utmmart/core/utils/validators/validation.dart';
-import 'package:utmmart/features/auth/data/models/register_req_body.dart';
-import 'package:utmmart/features/auth/domain/usecases/register_usecase.dart';
+import 'package:utmmart/features/auth/domain/usecases/firebase_register_usecase.dart';
 import 'package:utmmart/features/auth/presentation/logic/register/register_cubit.dart';
 import 'package:utmmart/features/auth/presentation/logic/register/register_state.dart';
 import 'package:utmmart/features/auth/presentation/views/login/login_view.dart';
@@ -25,42 +24,27 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _addressController.dispose();
     super.dispose();
   }
 
   void _handleRegistration() {
     if (_formKey.currentState!.validate()) {
-      final registerReqBody = RegisterReqBody(
-        name:
-            '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
-        email: _emailController.text.trim()..toLowerCase(),
+      final params = FirebaseRegisterParams(
+        email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text.trim(),
-        confirmPassword: _confirmPasswordController.text.trim(),
-        address: _addressController.text.trim(),
-        mobile: _phoneController.text.trim(),
       );
 
-      context.read<RegisterCubit>().register(
-            RegisterParams(registerReqBody: registerReqBody),
-          );
+      context.read<RegisterCubit>().register(params);
     }
   }
 
@@ -70,51 +54,24 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
       listener: (context, state) {
         if (state.status == RegisterStatus.success) {
           THelperFunctions.showSnackBar(
-              context: context,
-              message: state.message,
-              type: SnackBarType.success);
+            context: context,
+            message: state.message,
+            type: SnackBarType.success,
+          );
 
           THelperFunctions.navigateReplacementToScreen(context, LoginView());
-         } else if (state.status == RegisterStatus.failure) {
+        } else if (state.status == RegisterStatus.failure) {
           THelperFunctions.showSnackBar(
-              context: context,
-              message: state.message,
-              type: SnackBarType.error);
+            context: context,
+            message: state.message,
+            type: SnackBarType.error,
+          );
         }
       },
       child: Form(
         key: _formKey,
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _firstNameController,
-                    validator: (value) => value?.isEmpty ?? true
-                        ? 'First name is required'
-                        : null,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Iconsax.user),
-                      labelText: TTexts.firstName,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: TSizes.spaceBtwInputFields),
-                Expanded(
-                  child: TextFormField(
-                    controller: _lastNameController,
-                    validator: (value) =>
-                        value?.isEmpty ?? true ? 'Last name is required' : null,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Iconsax.user),
-                      labelText: TTexts.lastName,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: TSizes.spaceBtwInputFields),
             TextFormField(
               keyboardType: TextInputType.emailAddress,
               controller: _emailController,
@@ -124,27 +81,6 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
               decoration: const InputDecoration(
                 prefixIcon: Icon(Iconsax.direct),
                 labelText: TTexts.email,
-              ),
-            ),
-            const SizedBox(height: TSizes.spaceBtwInputFields),
-            TextFormField(
-              keyboardType: TextInputType.phone,
-              controller: _phoneController,
-              validator: (value) => TValidator.validatePhoneNumber(value),
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Iconsax.call),
-                labelText: TTexts.phoneNo,
-              ),
-            ),
-            const SizedBox(height: TSizes.spaceBtwInputFields),
-            TextFormField(
-              keyboardType: TextInputType.streetAddress,
-              controller: _addressController,
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Address is required' : null,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Iconsax.location),
-                labelText: 'Address',
               ),
             ),
             const SizedBox(height: TSizes.spaceBtwInputFields),
@@ -173,7 +109,9 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
               keyboardType: TextInputType.visiblePassword,
               controller: _confirmPasswordController,
               validator: (value) => TValidator.validateConfirmPassword(
-                  value, _passwordController),
+                value,
+                _passwordController,
+              ),
               obscureText: _obscurePassword,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Iconsax.password_check),
@@ -191,9 +129,9 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
                     onPressed: state.status == RegisterStatus.loading
                         ? null
                         : () {
-                          THelperFunctions.hideKeyboard();
-                          _handleRegistration();
-                        },
+                            THelperFunctions.hideKeyboard();
+                            _handleRegistration();
+                          },
                     child: state.status == RegisterStatus.loading
                         ? const Text(TTexts.loading)
                         : const Text(TTexts.createAccount),
