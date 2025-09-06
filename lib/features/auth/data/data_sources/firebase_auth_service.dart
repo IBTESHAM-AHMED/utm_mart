@@ -1,10 +1,17 @@
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:utmmart/features/auth/data/models/user_personal_data.dart';
 
 abstract class FirebaseAuthService {
   Future<Either<String, User>> registerWithEmailAndPassword({
     required String email,
     required String password,
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required String address,
   });
 
   Future<Either<String, User>> signInWithEmailAndPassword({
@@ -14,6 +21,7 @@ abstract class FirebaseAuthService {
 
   Future<Either<String, void>> signOut();
   Future<Either<String, void>> sendPasswordResetEmail({required String email});
+  Future<UserPersonalData?> getUserPersonalData();
   Stream<User?> get authStateChanges;
   User? get currentUser;
 }
@@ -31,6 +39,10 @@ class FirebaseAuthServiceImpl implements FirebaseAuthService {
   Future<Either<String, User>> registerWithEmailAndPassword({
     required String email,
     required String password,
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required String address,
   }) async {
     try {
       // Create user with email and password
@@ -41,6 +53,19 @@ class FirebaseAuthServiceImpl implements FirebaseAuthService {
       if (user == null) {
         return const Left('Registration failed. Please try again.');
       }
+
+      // Update display name
+      await user.updateDisplayName('$firstName $lastName');
+
+      // Store personal data locally
+      final personalData = UserPersonalData(
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+        address: address,
+        email: email,
+      );
+      await _storeUserPersonalData(personalData);
 
       return Right(user);
     } on FirebaseAuthException catch (e) {
@@ -76,9 +101,45 @@ class FirebaseAuthServiceImpl implements FirebaseAuthService {
   Future<Either<String, void>> signOut() async {
     try {
       await _firebaseAuth.signOut();
+      // Clear personal data on sign out
+      await _clearUserPersonalData();
       return const Right(null);
     } catch (e) {
       return Left('Sign out failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<UserPersonalData?> getUserPersonalData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final personalDataJson = prefs.getString('user_personal_data');
+      if (personalDataJson != null) {
+        final Map<String, dynamic> data = json.decode(personalDataJson);
+        return UserPersonalData.fromJson(data);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _storeUserPersonalData(UserPersonalData personalData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final personalDataJson = json.encode(personalData.toJson());
+      await prefs.setString('user_personal_data', personalDataJson);
+    } catch (e) {
+      // Handle error silently for now
+    }
+  }
+
+  Future<void> _clearUserPersonalData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_personal_data');
+    } catch (e) {
+      // Handle error silently for now
     }
   }
 

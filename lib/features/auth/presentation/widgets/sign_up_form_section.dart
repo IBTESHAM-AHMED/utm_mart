@@ -24,14 +24,22 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -42,6 +50,10 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
       final params = FirebaseRegisterParams(
         email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        address: _addressController.text.trim(),
       );
 
       context.read<RegisterCubit>().register(params);
@@ -72,6 +84,35 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
         key: _formKey,
         child: Column(
           children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _firstNameController,
+                    validator: (value) => value?.isEmpty ?? true
+                        ? 'First name is required'
+                        : null,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Iconsax.user),
+                      labelText: TTexts.firstName,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: TSizes.spaceBtwInputFields),
+                Expanded(
+                  child: TextFormField(
+                    controller: _lastNameController,
+                    validator: (value) =>
+                        value?.isEmpty ?? true ? 'Last name is required' : null,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Iconsax.user),
+                      labelText: TTexts.lastName,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: TSizes.spaceBtwInputFields),
             TextFormField(
               keyboardType: TextInputType.emailAddress,
               controller: _emailController,
@@ -81,6 +122,27 @@ class _SignUpFormSectionState extends State<SignUpFormSection> {
               decoration: const InputDecoration(
                 prefixIcon: Icon(Iconsax.direct),
                 labelText: TTexts.email,
+              ),
+            ),
+            const SizedBox(height: TSizes.spaceBtwInputFields),
+            TextFormField(
+              keyboardType: TextInputType.phone,
+              controller: _phoneController,
+              validator: (value) => TValidator.validatePhoneNumber(value),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Iconsax.call),
+                labelText: TTexts.phoneNo,
+              ),
+            ),
+            const SizedBox(height: TSizes.spaceBtwInputFields),
+            TextFormField(
+              keyboardType: TextInputType.streetAddress,
+              controller: _addressController,
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Address is required' : null,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Iconsax.location),
+                labelText: 'Address',
               ),
             ),
             const SizedBox(height: TSizes.spaceBtwInputFields),

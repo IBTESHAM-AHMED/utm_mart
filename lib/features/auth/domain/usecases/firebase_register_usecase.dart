@@ -14,6 +14,10 @@ class FirebaseRegisterUsecase
     return await sl<FirebaseAuthService>().registerWithEmailAndPassword(
       email: param.email,
       password: param.password,
+      firstName: param.firstName,
+      lastName: param.lastName,
+      phoneNumber: param.phoneNumber,
+      address: param.address,
     );
   }
 }
@@ -21,6 +25,17 @@ class FirebaseRegisterUsecase
 class FirebaseRegisterParams {
   final String email;
   final String password;
+  final String firstName;
+  final String lastName;
+  final String phoneNumber;
+  final String address;
 
-  FirebaseRegisterParams({required this.email, required this.password});
+  FirebaseRegisterParams({
+    required this.email,
+    required this.password,
+    required this.firstName,
+    required this.lastName,
+    required this.phoneNumber,
+    required this.address,
+  });
 }
