@@ -102,6 +102,23 @@ flutter:
           weight: 300
           style: italic
 
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logos/utmstore-logo-black.png"  # Your logo as app icon
+  remove_alpha_ios: true  # Remove alpha channel for iOS App Store compliance
+  min_sdk_android: 21  # Minimum Android SDK version
+  
+  # Adaptive icons for modern Android (fills better)
+  adaptive_icon_background: "#FFFFFF"  # White background
+  adaptive_icon_foreground: "assets/logos/utmstore-logo-black.png"  # Logo foreground
+  adaptive_icon_monochrome: "assets/logos/utmstore-logo-black.png"  # Monochrome version
+  
+  # Make icon fill more of the space
+  android_adaptive_icon_size: 432  # Larger size for better fill (default is 432)
+  ios_icon_size: 1024  # Full resolution for iOS
+
 flutter_native_splash:
   color: "#FFFFFF"  # Background color for light theme
   color_dark: "#000000"  # Background color for dark theme

@@ -12,7 +12,7 @@ import 'package:utmmart/features/personalization/presentation/widgets/account_se
 import 'package:utmmart/features/personalization/presentation/widgets/app_settings_section.dart';
 import 'package:utmmart/features/personalization/presentation/widgets/settings_view_header_section.dart';
 import 'package:utmmart/features/shop/presentation/views/orders_view.dart';
-import 'package:utmmart/features/shop/presentation/views/vendor_dashboard_view.dart';
+import 'package:utmmart/features/shop/presentation/views/seller_dashboard_view.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -30,7 +30,7 @@ class SettingsView extends StatelessWidget {
               userState.userData != null) {
             THelperFunctions.navigateToScreen(
               context,
-              VendorDashboardView(currentUser: userState.userData!),
+              const SellerDashboardView(),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(

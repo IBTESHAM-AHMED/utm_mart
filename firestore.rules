@@ -12,6 +12,14 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Store collection - for marketplace items
+    match /store/{itemId} {
+      allow read: if true; // Anyone can read store items
+      allow create: if request.auth != null; // Authenticated users can add items
+      allow update, delete: if request.auth != null && 
+        request.auth.uid == resource.data.sellerUid; // Only item owner can modify
+    }
+    
     // Products collection - for future use
     match /products/{productId} {
       allow read: if true; // Anyone can read products

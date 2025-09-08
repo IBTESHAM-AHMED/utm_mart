@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:utmmart/features/shop/data/models/address_model.dart';
+// TODO: AddressModel will be implemented when we add order functionality
+// import 'package:utmmart/features/shop/data/models/address_model.dart';
 
 enum OrderStatus {
   pending,
-  confirmed,
-  processing,
+  approved,
   shipped,
-  delivered,
+  received,
   cancelled,
   returned,
   refunded,
@@ -47,8 +47,9 @@ class OrderModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? estimatedDelivery;
-  final AddressModel shippingAddress;
-  final AddressModel? billingAddress;
+  // TODO: Address fields will be added when we implement order functionality
+  // final AddressModel shippingAddress;
+  // final AddressModel? billingAddress;
 
   OrderModel({
     this.id,
@@ -74,8 +75,9 @@ class OrderModel {
     required this.createdAt,
     required this.updatedAt,
     this.estimatedDelivery,
-    required this.shippingAddress,
-    this.billingAddress,
+    // TODO: Address parameters will be added when we implement order functionality
+    // required this.shippingAddress,
+    // this.billingAddress,
   });
 
   // Factory constructor to create OrderModel from Firestore document
@@ -121,10 +123,11 @@ class OrderModel {
       estimatedDelivery: data['estimatedDelivery'] != null
           ? (data['estimatedDelivery'] as Timestamp).toDate()
           : null,
-      shippingAddress: AddressModel.fromMap(data['shippingAddress'] ?? {}),
-      billingAddress: data['billingAddress'] != null
-          ? AddressModel.fromMap(data['billingAddress'])
-          : null,
+      // TODO: Address parsing will be added when we implement order functionality
+      // shippingAddress: AddressModel.fromMap(data['shippingAddress'] ?? {}),
+      // billingAddress: data['billingAddress'] != null
+      //     ? AddressModel.fromMap(data['billingAddress'])
+      //     : null,
     );
   }
 
@@ -155,8 +158,9 @@ class OrderModel {
       'estimatedDelivery': estimatedDelivery != null
           ? Timestamp.fromDate(estimatedDelivery!)
           : null,
-      'shippingAddress': shippingAddress.toMap(),
-      'billingAddress': billingAddress?.toMap(),
+      // TODO: Address serialization will be added when we implement order functionality
+      // 'shippingAddress': shippingAddress.toMap(),
+      // 'billingAddress': billingAddress?.toMap(),
     };
   }
 
@@ -185,8 +189,9 @@ class OrderModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? estimatedDelivery,
-    AddressModel? shippingAddress,
-    AddressModel? billingAddress,
+    // TODO: Address parameters will be added when we implement order functionality
+    // AddressModel? shippingAddress,
+    // AddressModel? billingAddress,
   }) {
     return OrderModel(
       id: id ?? this.id,
@@ -212,8 +217,9 @@ class OrderModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       estimatedDelivery: estimatedDelivery ?? this.estimatedDelivery,
-      shippingAddress: shippingAddress ?? this.shippingAddress,
-      billingAddress: billingAddress ?? this.billingAddress,
+      // TODO: Address assignment will be added when we implement order functionality
+      // shippingAddress: shippingAddress ?? this.shippingAddress,
+      // billingAddress: billingAddress ?? this.billingAddress,
     );
   }
 
