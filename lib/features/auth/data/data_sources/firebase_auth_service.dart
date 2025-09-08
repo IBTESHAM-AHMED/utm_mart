@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:utmmart/features/auth/data/models/user_personal_data.dart';
+import 'package:utmmart/features/auth/data/models/firestore_user_model.dart';
+import 'package:utmmart/features/auth/data/data_sources/firestore_user_service.dart';
+import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 
 abstract class FirebaseAuthService {
   Future<Either<String, User>> registerWithEmailAndPassword({
@@ -22,12 +25,18 @@ abstract class FirebaseAuthService {
   Future<Either<String, void>> signOut();
   Future<Either<String, void>> sendPasswordResetEmail({required String email});
   Future<UserPersonalData?> getUserPersonalData();
+  Future<Either<String, FirestoreUserModel>> getCurrentUserDocument();
+  Future<Either<String, void>> updateCurrentUserDocument(
+    Map<String, dynamic> updates,
+  );
+  Future<Either<String, void>> deleteCurrentUserAccount();
   Stream<User?> get authStateChanges;
   User? get currentUser;
 }
 
 class FirebaseAuthServiceImpl implements FirebaseAuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  FirestoreUserService get _firestoreUserService => sl<FirestoreUserService>();
 
   @override
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
@@ -57,7 +66,26 @@ class FirebaseAuthServiceImpl implements FirebaseAuthService {
       // Update display name
       await user.updateDisplayName('$firstName $lastName');
 
-      // Store personal data locally
+      // Create Firestore user document
+      final firestoreUser = FirestoreUserModel.fromRegistration(
+        uid: user.uid,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phoneNumber: phoneNumber,
+        address: address,
+      );
+
+      final createDocResult = await _firestoreUserService.createUserDocument(
+        firestoreUser,
+      );
+      if (createDocResult.isLeft()) {
+        // If Firestore creation fails, we should still complete the registration
+        // but log the error
+        print('Warning: Failed to create user document in Firestore');
+      }
+
+      // Store personal data locally for backward compatibility
       final personalData = UserPersonalData(
         firstName: firstName,
         lastName: lastName,
@@ -154,6 +182,45 @@ class FirebaseAuthServiceImpl implements FirebaseAuthService {
       return Left(_getFirebaseAuthErrorMessage(e));
     } catch (e) {
       return Left('An unexpected error occurred: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<Either<String, FirestoreUserModel>> getCurrentUserDocument() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      return const Left('No user logged in');
+    }
+
+    return await _firestoreUserService.getUserDocument(user.uid);
+  }
+
+  @override
+  Future<Either<String, void>> updateCurrentUserDocument(
+    Map<String, dynamic> updates,
+  ) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      return const Left('No user logged in');
+    }
+
+    return await _firestoreUserService.updateUserDocument(user.uid, updates);
+  }
+
+  @override
+  Future<Either<String, void>> deleteCurrentUserAccount() async {
+    try {
+      final result = await _firestoreUserService.deleteCurrentUserAccount();
+      if (result.isLeft()) {
+        return result;
+      }
+
+      // Clear local data
+      await _clearUserPersonalData();
+
+      return const Right(null);
+    } catch (e) {
+      return Left('Failed to delete user account: ${e.toString()}');
     }
   }
 

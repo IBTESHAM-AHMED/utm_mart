@@ -1,7 +1,7 @@
 # Firebase Implementation Guide for UTM Mart
 
 ## Overview
-UTM Mart is a single-vendor e-commerce Flutter application that uses Firebase as its backend service. This document outlines the complete Firebase implementation including setup, services, and data models.
+UTM Mart is a multi-vendor e-commerce Flutter application that uses Firebase as its backend service. This document outlines the complete Firebase implementation including setup, services, and data models for supporting multiple vendors where any registered user can buy and sell products.
 
 ## Firebase Services Used
 
@@ -19,9 +19,10 @@ UTM Mart is a single-vendor e-commerce Flutter application that uses Firebase as
 - **Purpose**: NoSQL database for storing app data
 - **Collections**: 
   - `users` - User profiles and preferences
-  - `products` - Product catalog
-  - `orders` - Customer orders
-  - `categories` - Product categories
+  - `vendors` - Vendor business profiles and information
+  - `products` - Product catalog (multi-vendor)
+  - `orders` - Customer orders (with vendor information)
+  - `categories` - Product categories (global)
 
 ### 4. Firebase Storage
 - **Purpose**: Store product images and media files
@@ -130,24 +131,36 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Products are vendor-specific
+    // Vendor profiles - users can create/update their own vendor profile
+    match /vendors/{vendorId} {
+      allow read: if true; // Public read access for vendor profiles
+      allow write: if request.auth != null && 
+                   request.auth.uid == vendorId;
+    }
+    
+    // Products - multi-vendor support
     match /products/{productId} {
       allow read: if true; // Public read access
-      allow write: if request.auth != null && 
-                   resource.data.vendorId == request.auth.uid;
+      allow create: if request.auth != null; // Any authenticated user can create products
+      allow update, delete: if request.auth != null && 
+                            resource.data.vendorId == request.auth.uid;
     }
     
-    // Orders are vendor-specific
+    // Orders - customers can read their own orders, vendors can read orders containing their products
     match /orders/{orderId} {
-      allow read, write: if request.auth != null && 
-                         resource.data.vendorId == request.auth.uid;
+      allow read: if request.auth != null && 
+                  (resource.data.customerId == request.auth.uid ||
+                   resource.data.vendorId == request.auth.uid);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+                    (resource.data.customerId == request.auth.uid ||
+                     resource.data.vendorId == request.auth.uid);
     }
     
-    // Categories are vendor-specific
+    // Categories are global - readable by all, writable by admins only
     match /categories/{categoryId} {
       allow read: if true; // Public read access
-      allow write: if request.auth != null && 
-                   resource.data.vendorId == request.auth.uid;
+      allow write: if request.auth != null; // For now, any authenticated user can manage categories
     }
   }
 }
@@ -160,6 +173,13 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Product images are vendor-specific
     match /products/{vendorId}/{productId}/{fileName} {
+      allow read: if true; // Public read access
+      allow write: if request.auth != null && 
+                   request.auth.uid == vendorId;
+    }
+    
+    // Vendor profile images
+    match /vendors/{vendorId}/{fileName} {
       allow read: if true; // Public read access
       allow write: if request.auth != null && 
                    request.auth.uid == vendorId;
@@ -324,5 +344,5 @@ For Firebase-related issues:
 
 ---
 
-**Note**: This implementation is designed for a single-vendor e-commerce app. For multi-vendor support, additional modifications to the data structure and security rules will be required.
+**Note**: This implementation is designed for a multi-vendor e-commerce marketplace where any registered user can buy and sell products. Each user can create their own vendor profile and list products for sale while also being able to purchase from other vendors.
 

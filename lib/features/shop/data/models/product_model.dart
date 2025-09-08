@@ -21,7 +21,10 @@ class ProductModel extends ProductEntity {
   @override
   final double rating;
   final int reviewCount;
-  final String vendorId;
+  final String vendorId; // User ID of the seller who owns this product
+  final String? vendorName; // Display name of the seller
+  final String? vendorEmail; // Email of the seller
+  final String? vendorPhone; // Phone of the seller
   @override
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -49,6 +52,9 @@ class ProductModel extends ProductEntity {
     this.rating = 0.0,
     this.reviewCount = 0,
     required this.vendorId,
+    this.vendorName,
+    this.vendorEmail,
+    this.vendorPhone,
     required this.createdAt,
     required this.updatedAt,
     this.specifications,
@@ -69,7 +75,7 @@ class ProductModel extends ProductEntity {
              : 0.0,
          rating: rating,
          stock: stockQuantity,
-         tags: tags ?? [],
+         tags: tags,
          brand: brand,
          warrantyInformation: 'Standard warranty',
          shippingInformation: 'Standard shipping',
@@ -79,6 +85,10 @@ class ProductModel extends ProductEntity {
          createdAt: createdAt,
          images: images,
          thumbnail: images.isNotEmpty ? images.first : '',
+         vendorId: vendorId,
+         vendorName: vendorName,
+         vendorEmail: vendorEmail,
+         vendorPhone: vendorPhone,
        );
 
   // Factory constructor to create ProductModel from Firestore document
@@ -100,6 +110,9 @@ class ProductModel extends ProductEntity {
       rating: (data['rating'] ?? 0.0).toDouble(),
       reviewCount: data['reviewCount'] ?? 0,
       vendorId: data['vendorId'] ?? '',
+      vendorName: data['vendorName'],
+      vendorEmail: data['vendorEmail'],
+      vendorPhone: data['vendorPhone'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       specifications: data['specifications'],
@@ -129,6 +142,9 @@ class ProductModel extends ProductEntity {
       rating: (json['rating'] ?? 0.0).toDouble(),
       reviewCount: json['reviewCount'] ?? 0,
       vendorId: json['vendorId'] ?? '',
+      vendorName: json['vendorName'],
+      vendorEmail: json['vendorEmail'],
+      vendorPhone: json['vendorPhone'],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'].toString())
           : DateTime.now(),
@@ -161,6 +177,9 @@ class ProductModel extends ProductEntity {
       'rating': rating,
       'reviewCount': reviewCount,
       'vendorId': vendorId,
+      'vendorName': vendorName,
+      'vendorEmail': vendorEmail,
+      'vendorPhone': vendorPhone,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'specifications': specifications,
@@ -189,6 +208,9 @@ class ProductModel extends ProductEntity {
     double? rating,
     int? reviewCount,
     String? vendorId,
+    String? vendorName,
+    String? vendorEmail,
+    String? vendorPhone,
     DateTime? createdAt,
     DateTime? updatedAt,
     Map<String, dynamic>? specifications,
@@ -214,6 +236,9 @@ class ProductModel extends ProductEntity {
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
       vendorId: vendorId ?? this.vendorId,
+      vendorName: vendorName ?? this.vendorName,
+      vendorEmail: vendorEmail ?? this.vendorEmail,
+      vendorPhone: vendorPhone ?? this.vendorPhone,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       specifications: specifications ?? this.specifications,
@@ -244,6 +269,17 @@ class ProductModel extends ProductEntity {
 
   // Check if product is low in stock (less than 10 items)
   bool get isLowStock => stockQuantity > 0 && stockQuantity < 10;
+
+  // Get seller display name
+  String get vendorDisplayName {
+    if (vendorName != null && vendorName!.isNotEmpty) {
+      return vendorName!;
+    }
+    return 'User $vendorId';
+  }
+
+  // Check if this product belongs to a specific vendor
+  bool belongsToVendor(String userId) => vendorId == userId;
 
   @override
   String toString() {

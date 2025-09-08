@@ -20,6 +20,10 @@ class ProductEntity extends Equatable {
   final DateTime createdAt;
   final List<String> images;
   final String thumbnail;
+  final String? vendorId;
+  final String? vendorName;
+  final String? vendorEmail;
+  final String? vendorPhone;
   const ProductEntity({
     required this.id,
     required this.title,
@@ -39,29 +43,37 @@ class ProductEntity extends Equatable {
     required this.createdAt,
     required this.images,
     required this.thumbnail,
+    this.vendorId,
+    this.vendorName,
+    this.vendorEmail,
+    this.vendorPhone,
   });
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        description,
-        category,
-        price,
-        discountPercentage,
-        rating,
-        stock,
-        tags,
-        brand,
-        warrantyInformation,
-        shippingInformation,
-        availabilityStatus,
-        reviews,
-        returnPolicy,
-        createdAt,
-        images,
-        thumbnail
-      ];
+    id,
+    title,
+    description,
+    category,
+    price,
+    discountPercentage,
+    rating,
+    stock,
+    tags,
+    brand,
+    warrantyInformation,
+    shippingInformation,
+    availabilityStatus,
+    reviews,
+    returnPolicy,
+    createdAt,
+    images,
+    thumbnail,
+    vendorId,
+    vendorName,
+    vendorEmail,
+    vendorPhone,
+  ];
 }
 
 // Review entity
@@ -81,6 +93,11 @@ class ReviewEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props =>
-      [rating, comment, date, reviewerName, reviewerEmail];
+  List<Object?> get props => [
+    rating,
+    comment,
+    date,
+    reviewerName,
+    reviewerEmail,
+  ];
 }

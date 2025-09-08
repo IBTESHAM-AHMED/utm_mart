@@ -80,10 +80,12 @@ class FirebaseService {
   Future<void> _saveFcmToken(String token) async {
     try {
       if (currentUser != null) {
-        await _firestore.collection('users').doc(currentUser!.uid).update({
+        // Use set with merge: true to create document if it doesn't exist
+        await _firestore.collection('users').doc(currentUser!.uid).set({
           'fcmToken': token,
           'lastUpdated': FieldValue.serverTimestamp(),
-        });
+        }, SetOptions(merge: true));
+        print('FCM token saved successfully');
       }
     } catch (e) {
       print('Failed to save FCM token: $e');

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:utmmart/features/shop/data/models/address_model.dart';
 
 enum OrderStatus {
   pending,
@@ -39,7 +40,10 @@ class OrderModel {
   final PaymentMethod paymentMethod;
   final String? trackingNumber;
   final String? notes;
-  final String vendorId;
+  final String vendorId; // Seller's user ID
+  final String? vendorName; // Seller's name for buyer reference
+  final String? vendorEmail; // Seller's email for buyer reference
+  final String? vendorPhone; // Seller's phone for buyer reference
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? estimatedDelivery;
@@ -64,6 +68,9 @@ class OrderModel {
     this.trackingNumber,
     this.notes,
     required this.vendorId,
+    this.vendorName,
+    this.vendorEmail,
+    this.vendorPhone,
     required this.createdAt,
     required this.updatedAt,
     this.estimatedDelivery,
@@ -106,6 +113,9 @@ class OrderModel {
       trackingNumber: data['trackingNumber'],
       notes: data['notes'],
       vendorId: data['vendorId'] ?? '',
+      vendorName: data['vendorName'],
+      vendorEmail: data['vendorEmail'],
+      vendorPhone: data['vendorPhone'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       estimatedDelivery: data['estimatedDelivery'] != null
@@ -137,6 +147,9 @@ class OrderModel {
       'trackingNumber': trackingNumber,
       'notes': notes,
       'vendorId': vendorId,
+      'vendorName': vendorName,
+      'vendorEmail': vendorEmail,
+      'vendorPhone': vendorPhone,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'estimatedDelivery': estimatedDelivery != null
@@ -166,6 +179,9 @@ class OrderModel {
     String? trackingNumber,
     String? notes,
     String? vendorId,
+    String? vendorName,
+    String? vendorEmail,
+    String? vendorPhone,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? estimatedDelivery,
@@ -190,6 +206,9 @@ class OrderModel {
       trackingNumber: trackingNumber ?? this.trackingNumber,
       notes: notes ?? this.notes,
       vendorId: vendorId ?? this.vendorId,
+      vendorName: vendorName ?? this.vendorName,
+      vendorEmail: vendorEmail ?? this.vendorEmail,
+      vendorPhone: vendorPhone ?? this.vendorPhone,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       estimatedDelivery: estimatedDelivery ?? this.estimatedDelivery,
@@ -262,6 +281,26 @@ class OrderModel {
   bool get canBeUpdated =>
       status != OrderStatus.delivered && status != OrderStatus.cancelled;
 
+  // Get seller display name for buyer reference
+  String get sellerDisplayName {
+    if (vendorName != null && vendorName!.isNotEmpty) {
+      return vendorName!;
+    }
+    return 'Seller ID: $vendorId';
+  }
+
+  // Get seller contact info for buyer reference
+  String get sellerContactInfo {
+    List<String> contact = [];
+    if (vendorEmail != null && vendorEmail!.isNotEmpty) {
+      contact.add('Email: ${vendorEmail!}');
+    }
+    if (vendorPhone != null && vendorPhone!.isNotEmpty) {
+      contact.add('Phone: ${vendorPhone!}');
+    }
+    return contact.join(' • ');
+  }
+
   @override
   String toString() {
     return 'OrderModel(id: $id, customerName: $customerName, total: $total, status: $status)';
@@ -316,55 +355,3 @@ class OrderItemModel {
     };
   }
 }
-
-class AddressModel {
-  final String street;
-  final String city;
-  final String state;
-  final String country;
-  final String zipCode;
-  final String? apartment;
-  final String? landmark;
-
-  AddressModel({
-    required this.street,
-    required this.city,
-    required this.state,
-    required this.country,
-    required this.zipCode,
-    this.apartment,
-    this.landmark,
-  });
-
-  factory AddressModel.fromMap(Map<String, dynamic> map) {
-    return AddressModel(
-      street: map['street'] ?? '',
-      city: map['city'] ?? '',
-      state: map['state'] ?? '',
-      country: map['country'] ?? '',
-      zipCode: map['zipCode'] ?? '',
-      apartment: map['apartment'],
-      landmark: map['landmark'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'street': street,
-      'city': city,
-      'state': state,
-      'country': country,
-      'zipCode': zipCode,
-      'apartment': apartment,
-      'landmark': landmark,
-    };
-  }
-
-  String get fullAddress {
-    List<String> parts = [street];
-    if (apartment != null && apartment!.isNotEmpty) parts.add(apartment!);
-    parts.addAll([city, state, zipCode, country]);
-    return parts.where((part) => part.isNotEmpty).join(', ');
-  }
-}
-

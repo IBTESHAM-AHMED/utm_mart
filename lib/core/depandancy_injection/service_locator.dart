@@ -5,6 +5,7 @@ import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:utmmart/features/auth/data/data_sources/auth_local_data_source.dart';
 import 'package:utmmart/features/auth/data/data_sources/auth_remote_data_source.dart';
 import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
+import 'package:utmmart/features/auth/data/data_sources/firestore_user_service.dart';
 import 'package:utmmart/features/auth/data/repository/auth_repo_impl.dart';
 import 'package:utmmart/features/auth/domain/repository/auth_repo.dart';
 import 'package:utmmart/features/auth/domain/usecases/get_cached_user_usecase.dart';
@@ -32,6 +33,7 @@ Future<void> setupServiceLocator() async {
   sl.registerSingleton<DioClient>(DioClient());
   sl.registerSingleton<FirebaseService>(FirebaseService());
   sl.registerSingleton<FirebaseAuthService>(FirebaseAuthServiceImpl());
+  sl.registerSingleton<FirestoreUserService>(FirestoreUserServiceImpl());
 
   // DataSources
   sl.registerSingleton<AuthRemoteDataSource>(AuthRemoteDataSourceImpl());

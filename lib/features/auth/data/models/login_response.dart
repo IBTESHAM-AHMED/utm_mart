@@ -5,11 +5,7 @@ class LoginResponse extends Equatable {
   final String message;
   final LoginUserData? data;
 
-  const LoginResponse({
-    required this.status,
-    required this.message,
-    this.data,
-  });
+  const LoginResponse({required this.status, required this.message, this.data});
 
   @override
   List<Object?> get props => [status, message, data];
@@ -22,7 +18,6 @@ class LoginResponse extends Equatable {
     );
   }
 }
-
 
 class LoginUserData extends Equatable {
   final int id;
@@ -47,18 +42,26 @@ class LoginUserData extends Equatable {
     required this.profilePhotoUrl,
   });
 
+  // In multi-vendor system, all logged-in users can buy and sell
+  bool get canSell => true;
+  bool get canBuy => true;
+  bool get isAdmin => roleId == 3; // Keep admin role for system administration
+
+  // User ID as string for Firebase compatibility
+  String get userId => id.toString();
+
   @override
   List<Object?> get props => [
-        id,
-        name,
-        mobile,
-        email,
-        roleId,
-        address,
-        profilePhotoPath,
-        token,
-        profilePhotoUrl,
-      ];
+    id,
+    name,
+    mobile,
+    email,
+    roleId,
+    address,
+    profilePhotoPath,
+    token,
+    profilePhotoUrl,
+  ];
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -72,6 +75,7 @@ class LoginUserData extends Equatable {
       'profile_photo_url': profilePhotoUrl,
     };
   }
+
   factory LoginUserData.fromJson(Map<String, dynamic> json) {
     return LoginUserData(
       id: json['id'],
