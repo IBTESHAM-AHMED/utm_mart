@@ -9,6 +9,7 @@ class SearchContainerModel {
   final bool showBackground, showBorder;
   final void Function()? onPressed;
   final EdgeInsetsGeometry padding;
+  final TextEditingController? controller;
   SearchContainerModel({
     this.padding = const EdgeInsets.symmetric(horizontal: TSizes.defaultSpace),
     this.onPressed,
@@ -16,5 +17,6 @@ class SearchContainerModel {
     this.title = TTexts.searchContainer,
     this.showBackground = true,
     this.showBorder = true,
+    this.controller,
   });
 }

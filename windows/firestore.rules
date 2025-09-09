@@ -53,5 +53,24 @@ service cloud.firestore {
       allow read: if true; // Anyone can read categories
       allow write: if request.auth != null; // Only authenticated users can write
     }
+    
+    // Addresses collection - for user addresses
+    match /addresses/{addressId} {
+      // Allow read if user is the owner of the address
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.userUid;
+      
+      // Allow create if user is creating their own address
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userUid;
+      
+      // Allow update if user is the owner of the address
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.userUid;
+      
+      // Allow delete if user is the owner of the address
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.userUid;
+    }
   }
 }

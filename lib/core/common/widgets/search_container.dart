@@ -6,44 +6,51 @@ import 'package:utmmart/core/utils/device/device_utility.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 
 class SearchContainer extends StatelessWidget {
-  const SearchContainer({
-    super.key,
-    required this.searchContainerModel,
-  });
+  const SearchContainer({super.key, required this.searchContainerModel});
   final SearchContainerModel searchContainerModel;
   @override
   Widget build(BuildContext context) {
     final dark = THelperFunctions.isDarkMode(context);
     return Padding(
       padding: searchContainerModel.padding,
-      child: GestureDetector(
-        onTap: searchContainerModel.onPressed,
-        child: Container(
-          width: TDeviceUtils.getScreenWidth(context),
-          padding: const EdgeInsets.all(TSizes.md),
-          decoration: BoxDecoration(
-            color: searchContainerModel.showBackground
-                ? dark
+      child: Container(
+        width: TDeviceUtils.getScreenWidth(context),
+        padding: const EdgeInsets.all(TSizes.md),
+        decoration: BoxDecoration(
+          color: searchContainerModel.showBackground
+              ? dark
                     ? TColors.dark
                     : TColors.light
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(TSizes.cardRadiusLg),
-            border: searchContainerModel.showBorder
-                ? Border.all(
-                    color: TColors.grey,
-                  )
-                : null,
-          ),
-          child: Row(
-            children: [
-              Icon(searchContainerModel.icon, color: TColors.darkGrey),
-              const SizedBox(width: TSizes.spaceBtwItems),
-              Text(
-                searchContainerModel.title,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(TSizes.cardRadiusLg),
+          border: searchContainerModel.showBorder
+              ? Border.all(color: TColors.grey)
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(searchContainerModel.icon, color: TColors.darkGrey),
+            const SizedBox(width: TSizes.spaceBtwItems),
+            Expanded(
+              child: searchContainerModel.controller != null
+                  ? TextField(
+                      controller: searchContainerModel.controller,
+                      decoration: InputDecoration(
+                        hintText: searchContainerModel.title,
+                        border: InputBorder.none,
+                        hintStyle: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    )
+                  : GestureDetector(
+                      onTap: searchContainerModel.onPressed,
+                      child: Text(
+                        searchContainerModel.title,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+            ),
+          ],
         ),
       ),
     );

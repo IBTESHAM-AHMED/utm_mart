@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:utmmart/core/common/view_models/circular_container_view_model.dart';
-import 'package:utmmart/core/common/widgets/circular_container.dart';
-import 'package:utmmart/core/utils/constants/colors.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
-import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +20,6 @@ class _OrderListItemState extends State<OrderListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final dark = THelperFunctions.isDarkMode(context);
     final data = widget.order.data() as Map<String, dynamic>;
 
     // Extract order data
@@ -32,155 +27,314 @@ class _OrderListItemState extends State<OrderListItem> {
     final String status = data['status'] ?? 'pending';
     final String paymentStatus = data['paymentStatus'] ?? 'pending';
     final double total = (data['total'] ?? 0.0).toDouble();
-    final int itemCount = (data['items'] as List?)?.length ?? 0;
+    final double subtotal = (data['subtotal'] ?? 0.0).toDouble();
+    final double tax = (data['tax'] ?? 0.0).toDouble();
+    final List<dynamic> items = data['items'] as List? ?? [];
     final Timestamp createdAt = data['createdAt'] as Timestamp;
     final DateTime orderDate = createdAt.toDate();
 
-    // Format date
+    // Format date and time
     final String formattedDate = DateFormat('dd MMM, yyyy').format(orderDate);
+    final String formattedTime = DateFormat('HH:mm').format(orderDate);
 
     // Get status color and icon
     final statusInfo = _getStatusInfo(status);
 
-    return CircularContainer(
-      circularContainerModel: CircularContainerModel(
-        showBorder: true,
-        color: dark ? TColors.dark : TColors.light,
-        padding: const EdgeInsets.all(TSizes.md),
+    return Card(
+      margin: const EdgeInsets.only(bottom: TSizes.md),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(TSizes.lg),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(statusInfo['icon'], color: statusInfo['color']),
-                const SizedBox(width: TSizes.spaceBtwItems / 2),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        statusInfo['text'],
-                        style: Theme.of(context).textTheme.bodyLarge!.apply(
-                          color: statusInfo['color'],
-                          fontWeightDelta: 1,
-                        ),
-                      ),
-                      Text(
-                        formattedDate,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: TSizes.spaceBtwItems),
-            Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      const Icon(Iconsax.tag),
-                      const SizedBox(width: TSizes.spaceBtwItems / 2),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "Order",
-                              style: Theme.of(context).textTheme.labelMedium,
-                            ),
-                            Text(
-                              "#${orderId.substring(0, 8)}",
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      const Icon(Iconsax.shopping_bag),
-                      const SizedBox(width: TSizes.spaceBtwItems / 2),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "Items",
-                              style: Theme.of(context).textTheme.labelMedium,
-                            ),
-                            Text(
-                              "$itemCount item${itemCount != 1 ? 's' : ''}",
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: TSizes.spaceBtwItems / 2),
+            // Order Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Total: \$${total.toStringAsFixed(2)}",
-                  style: Theme.of(context).textTheme.titleMedium?.apply(
-                    fontWeightDelta: 1,
-                    color: TColors.primary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Order #${orderId.substring(0, 12)}',
+                        style: Theme.of(context).textTheme.titleLarge?.apply(
+                          fontWeightDelta: 2,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Text(
+                        '$formattedDate at $formattedTime',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.apply(color: Colors.grey[600]),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: TSizes.sm,
-                    vertical: TSizes.xs,
+                    horizontal: TSizes.md,
+                    vertical: TSizes.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusInfo['color'].withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(TSizes.md),
+                    border: Border.all(color: statusInfo['color'], width: 2),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        statusInfo['icon'],
+                        color: statusInfo['color'],
+                        size: 16,
+                      ),
+                      const SizedBox(width: TSizes.xs),
+                      Text(
+                        statusInfo['text'].toUpperCase(),
+                        style: Theme.of(context).textTheme.labelMedium?.apply(
+                          color: statusInfo['color'],
+                          fontWeightDelta: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: TSizes.lg),
+
+            // Order Items Section
+            Container(
+              padding: const EdgeInsets.all(TSizes.md),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(TSizes.md),
+                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.shopping_bag, color: Colors.blue, size: 20),
+                      const SizedBox(width: TSizes.sm),
+                      Text(
+                        'Order Items (${items.length})',
+                        style: Theme.of(context).textTheme.titleMedium?.apply(
+                          fontWeightDelta: 1,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: TSizes.sm),
+                  ...items.map((item) => _buildOrderItemRow(item)).toList(),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: TSizes.lg),
+
+            // Order Summary Section
+            Container(
+              padding: const EdgeInsets.all(TSizes.md),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(TSizes.md),
+                border: Border.all(color: Colors.green.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.receipt, color: Colors.green, size: 20),
+                      const SizedBox(width: TSizes.sm),
+                      Text(
+                        'Order Summary',
+                        style: Theme.of(context).textTheme.titleMedium?.apply(
+                          fontWeightDelta: 1,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: TSizes.sm),
+                  _buildSummaryRow(
+                    'Subtotal',
+                    '\$${subtotal.toStringAsFixed(2)}',
+                  ),
+                  _buildSummaryRow('Tax', '\$${tax.toStringAsFixed(2)}'),
+                  const Divider(),
+                  _buildSummaryRow(
+                    'Total',
+                    '\$${total.toStringAsFixed(2)}',
+                    isTotal: true,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: TSizes.lg),
+
+            // Payment Status and Action Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TSizes.md,
+                    vertical: TSizes.sm,
                   ),
                   decoration: BoxDecoration(
                     color: _getPaymentStatusColor(
                       paymentStatus,
                     ).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(TSizes.sm),
+                    borderRadius: BorderRadius.circular(TSizes.md),
                     border: Border.all(
                       color: _getPaymentStatusColor(paymentStatus),
                       width: 1,
                     ),
                   ),
                   child: Text(
-                    paymentStatus.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelSmall?.apply(
+                    'Payment: ${paymentStatus.toUpperCase()}',
+                    style: Theme.of(context).textTheme.labelMedium?.apply(
                       color: _getPaymentStatusColor(paymentStatus),
                       fontWeightDelta: 1,
                     ),
                   ),
                 ),
+
+                // Add confirmation button for shipped orders
+                if (status == 'shipped')
+                  ElevatedButton.icon(
+                    onPressed: () => _showReceiveConfirmation(context, orderId),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: TSizes.lg,
+                        vertical: TSizes.sm,
+                      ),
+                    ),
+                    icon: const Icon(Icons.check_circle, size: 18),
+                    label: const Text('Confirm Received'),
+                  ),
               ],
             ),
-            // Add confirmation button for shipped orders
-            if (status == 'shipped') ...[
-              const SizedBox(height: TSizes.spaceBtwItems),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _showReceiveConfirmation(context, orderId),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Confirm Received'),
-                ),
-              ),
-            ],
           ],
         ),
+      ),
+    );
+  }
+
+  // Build order item row
+  Widget _buildOrderItemRow(Map<String, dynamic> item) {
+    final String itemName = item['itemName'] ?? 'Unknown Item';
+    final int quantity = item['quantity'] ?? 0;
+    final double price = (item['itemPrice'] ?? 0.0).toDouble();
+    final double totalPrice = (item['totalPrice'] ?? 0.0).toDouble();
+    final String itemImage = item['itemImageUrl'] ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: TSizes.sm),
+      padding: const EdgeInsets.all(TSizes.sm),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(TSizes.sm),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          // Item Image
+          if (itemImage.isNotEmpty)
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(TSizes.sm),
+                image: DecorationImage(
+                  image: NetworkImage(itemImage),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            )
+          else
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(TSizes.sm),
+              ),
+              child: const Icon(Icons.image, color: Colors.grey),
+            ),
+
+          const SizedBox(width: TSizes.sm),
+
+          // Item Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  itemName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Qty: $quantity × \$${price.toStringAsFixed(2)}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+          // Total Price
+          Text(
+            '\$${totalPrice.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.blue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build summary row
+  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TSizes.xs),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              fontSize: isTotal ? 16 : 14,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              fontSize: isTotal ? 18 : 14,
+              color: isTotal ? Colors.blue : Colors.black,
+            ),
+          ),
+        ],
       ),
     );
   }

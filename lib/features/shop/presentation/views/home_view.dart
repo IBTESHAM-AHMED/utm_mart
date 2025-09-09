@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/common/view_models/grid_layout_view_model.dart';
 import 'package:utmmart/core/common/view_models/section_heading_view_model.dart';
 import 'package:utmmart/core/common/widgets/section_heading.dart';
-import 'package:utmmart/core/common/widgets/vertical_product_card.dart';
 import 'package:utmmart/core/cubits/banner_carousel_slider_cubit_cubit/banner_carousel_slider_cubit.dart';
 import 'package:utmmart/core/utils/constants/colors.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
-import 'package:utmmart/core/utils/service_locator/service_locator.dart';
+import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/features/auth/presentation/widgets/grid_layout.dart';
-import 'package:utmmart/features/shop/presentation/controller/shop_cubit.dart';
-import 'package:utmmart/features/shop/presentation/views/all_products_view.dart';
+import 'package:utmmart/features/shop/data/models/store_item_model.dart';
+import 'package:utmmart/features/shop/data/services/store_firestore_service.dart';
+import 'package:utmmart/features/shop/presentation/views/store_view.dart';
+import 'package:utmmart/features/shop/presentation/views/store_item_detail_view.dart';
 import 'package:utmmart/features/shop/presentation/widgets/home_header_section.dart';
 import 'package:utmmart/features/shop/presentation/widgets/promo_banner_carousel_slider.dart';
 
@@ -51,21 +53,14 @@ class HomeViewShimmer extends StatelessWidget {
 
           // Section Heading Shimmer
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: TSizes.defaultSpace),
+            padding: const EdgeInsets.symmetric(
+              horizontal: TSizes.defaultSpace,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  width: 120,
-                  height: 20,
-                  color: Colors.white,
-                ),
-                Container(
-                  width: 80,
-                  height: 20,
-                  color: Colors.white,
-                ),
+                Container(width: 120, height: 20, color: Colors.white),
+                Container(width: 80, height: 20, color: Colors.white),
               ],
             ),
           ),
@@ -75,8 +70,9 @@ class HomeViewShimmer extends StatelessWidget {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding:
-                const EdgeInsets.symmetric(horizontal: TSizes.defaultSpace),
+            padding: const EdgeInsets.symmetric(
+              horizontal: TSizes.defaultSpace,
+            ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: TSizes.gridViewSpacing,
@@ -97,8 +93,9 @@ class HomeViewShimmer extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(TSizes.productImageRadius),
+                        borderRadius: BorderRadius.circular(
+                          TSizes.productImageRadius,
+                        ),
                       ),
                     ),
                   ),
@@ -154,8 +151,44 @@ class HomeViewShimmer extends StatelessWidget {
   }
 }
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  final StoreFirestoreService _storeService = sl<StoreFirestoreService>();
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_filterItems);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterItems() {
+    setState(() {});
+  }
+
+  List<StoreItemModel> _applyFilters(List<StoreItemModel> items) {
+    final query = _searchController.text.toLowerCase();
+
+    return items.where((item) {
+      final matchesSearch =
+          query.isEmpty ||
+          item.itemName.toLowerCase().contains(query) ||
+          item.itemBrand.toLowerCase().contains(query);
+      return matchesSearch;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +197,7 @@ class HomeView extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const HomeHeaderSection(),
+              HomeHeaderSection(searchController: _searchController),
               const SizedBox(height: TSizes.spaceBtwSections),
               BlocProvider(
                 create: (context) => BannerCarouselSliderCubit(),
@@ -175,18 +208,13 @@ class HomeView extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: SectionHeading(
                   sectionHeadingModel: SectionHeadingModel(
-                    title: "Top Rated Products",
+                    title: "Todays Pick",
                     showActionButton: true,
                     textColor: TColors.primary,
                     actionButtonOnPressed: () {
                       THelperFunctions.navigateToScreen(
                         context,
-                        BlocProvider(
-                          create: (context) => getIt<ShopCubit>()
-                            ..getSortedProducts(
-                                sortBy: 'rating', sortType: "desc"),
-                          child: const AllProductsView(),
-                        ),
+                        const StoreView(),
                       );
                     },
                     actionButtonTitle: "View All",
@@ -194,32 +222,145 @@ class HomeView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: TSizes.spaceBtwItems),
-              BlocBuilder<ShopCubit, ShopState>(
-                builder: (context, state) {
-                  if (state is ShopError) {
-                    return Text(state.error.message);
+              StreamBuilder<QuerySnapshot>(
+                stream: _storeService.getStoreItemsStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const HomeViewShimmer();
                   }
-                  if (state is ShopSortedProductsLoaded) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: GridLayout(
-                        gridLayoutModel: GridLayoutModel(
-                          itemCount: state.productsList.length,
-                          itemBuilder: (context, index) {
-                            return VerticalProductCard(
-                              product: state.productsList[index],
-                            );
-                          },
-                          mainAxisExtent: 288,
-                        ),
-                      ),
-                    );
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
                   }
-                  return const HomeViewShimmer();
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text('No items available'));
+                  }
+
+                  final items = snapshot.data!.docs
+                      .map((doc) => StoreItemModel.fromFirestore(doc))
+                      .where(
+                        (item) => item.itemStock > 0,
+                      ) // Only show items with stock
+                      .toList();
+
+                  final filteredItems = _applyFilters(items);
+
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: TSizes.gridViewSpacing,
+                            crossAxisSpacing: TSizes.gridViewSpacing,
+                            childAspectRatio: 0.75,
+                          ),
+                      itemCount: filteredItems.length,
+                      itemBuilder: (context, index) {
+                        final item = filteredItems[index];
+                        return _buildStoreItemCard(item);
+                      },
+                    ),
+                  );
                 },
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoreItemCard(StoreItemModel item) {
+    return GestureDetector(
+      onTap: () {
+        THelperFunctions.navigateToScreen(
+          context,
+          StoreItemDetailView(item: item),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(TSizes.productImageRadius),
+          border: Border.all(color: Colors.grey.shade300),
+          color: Colors.white,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Item Image
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(TSizes.productImageRadius),
+                    topRight: Radius.circular(TSizes.productImageRadius),
+                  ),
+                  image: DecorationImage(
+                    image: NetworkImage(item.itemImageUrl),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+            // Item Details
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Item Name
+                    Text(
+                      item.itemName,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // Item Brand
+                    Text(
+                      item.itemBrand,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // Price
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '\$${item.itemPrice.toStringAsFixed(2)}',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: TColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ),
+                        Text(
+                          '${item.itemStock}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

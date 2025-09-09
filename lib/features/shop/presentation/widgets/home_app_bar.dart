@@ -10,6 +10,7 @@ import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
 import 'package:utmmart/features/auth/data/models/firestore_user_model.dart';
 import 'package:utmmart/features/shop/presentation/views/cart_view.dart';
+import 'package:utmmart/features/personalization/presentation/views/profile_view.dart';
 
 class HomeAppBar extends StatefulWidget {
   const HomeAppBar({super.key});
@@ -49,83 +50,88 @@ class _HomeAppBarState extends State<HomeAppBar> {
   Widget build(BuildContext context) {
     return CustomAppBar(
       appBarModel: AppBarModel(
-        title: Row(
-          children: [
-            // Profile Image
-            Container(
-              width: 45,
-              height: 45,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: TColors.white, width: 2),
-              ),
-              child: ClipOval(
-                child: _currentUser?.profileImageUrl.isNotEmpty == true
-                    ? Image.network(
-                        _currentUser!.profileImageUrl,
-                        fit: BoxFit.cover,
-                        width: 45,
-                        height: 45,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: TColors.grey.withOpacity(0.3),
-                            child: const Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: TColors.white,
+        title: GestureDetector(
+          onTap: () {
+            THelperFunctions.navigateToScreen(context, const ProfileView());
+          },
+          child: Row(
+            children: [
+              // Profile Image
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: TColors.white, width: 2),
+                ),
+                child: ClipOval(
+                  child: _currentUser?.profileImageUrl.isNotEmpty == true
+                      ? Image.network(
+                          _currentUser!.profileImageUrl,
+                          fit: BoxFit.cover,
+                          width: 45,
+                          height: 45,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: TColors.grey.withOpacity(0.3),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: TColors.white,
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: TColors.grey.withOpacity(0.3),
-                            child: const Icon(
-                              Icons.person,
-                              color: TColors.white,
-                              size: 24,
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: TColors.grey.withOpacity(0.3),
-                        child: const Icon(
-                          Icons.person,
-                          color: TColors.white,
-                          size: 24,
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: TColors.grey.withOpacity(0.3),
+                              child: const Icon(
+                                Icons.person,
+                                color: TColors.white,
+                                size: 24,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: TColors.grey.withOpacity(0.3),
+                          child: const Icon(
+                            Icons.person,
+                            color: TColors.white,
+                            size: 24,
+                          ),
                         ),
-                      ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            // User Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    TTexts.homeAppbarTitle,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium!.apply(color: TColors.grey),
-                  ),
-                  Text(
-                    _currentUser?.fullName ?? "Loading...",
-                    style: Theme.of(
-                      context,
-                    ).textTheme.headlineSmall!.apply(color: TColors.white),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+              const SizedBox(width: 12),
+              // User Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      TTexts.homeAppbarTitle,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelMedium!.apply(color: TColors.grey),
+                    ),
+                    Text(
+                      _currentUser?.fullName ?? "Loading...",
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall!.apply(color: TColors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           CartCounterIcon(

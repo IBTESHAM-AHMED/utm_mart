@@ -239,129 +239,6 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     }
   }
 
-  // Add new item functionality
-  void _addNewItem(BuildContext context) {
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final stockController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final imageUrlController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Item'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Item Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: priceController,
-                decoration: const InputDecoration(
-                  labelText: 'Price',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: stockController,
-                decoration: const InputDecoration(
-                  labelText: 'Stock',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: imageUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'Image URL',
-                  border: OutlineInputBorder(),
-                  hintText: 'https://example.com/image.jpg',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter an item name'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              await _createItem({
-                'itemName': nameController.text.trim(),
-                'itemPrice': double.tryParse(priceController.text) ?? 0.0,
-                'itemStock': int.tryParse(stockController.text) ?? 0,
-                'itemDescription': descriptionController.text.trim(),
-                'itemImageUrl': imageUrlController.text.trim(),
-                'sellerUid': _firebaseService.currentUser?.uid ?? '',
-                'createdAt': DateTime.now().toIso8601String(),
-                'updatedAt': DateTime.now().toIso8601String(),
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Add Item'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Create new item in Firestore
-  Future<void> _createItem(Map<String, dynamic> itemData) async {
-    try {
-      await _firebaseService.firestore.collection('store').add(itemData);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item added successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error adding item: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   // Build pending order card
   Widget _buildPendingOrderCard(
     BuildContext context,
@@ -370,72 +247,312 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
   ) {
     final String status = data['status'] ?? 'pending';
     final String customerName = data['customerName'] ?? 'Unknown Customer';
+    final String customerEmail = data['customerEmail'] ?? 'No email';
+    final String customerPhone = data['customerPhone'] ?? 'No phone';
     final double total = (data['total'] ?? 0.0).toDouble();
-    final int itemCount = (data['items'] as List?)?.length ?? 0;
+    final double subtotal = (data['subtotal'] ?? 0.0).toDouble();
+    final double tax = (data['tax'] ?? 0.0).toDouble();
+    final List<dynamic> items = data['items'] as List? ?? [];
     final Timestamp createdAt = data['createdAt'] as Timestamp;
     final DateTime orderDate = createdAt.toDate();
     final String formattedDate = DateFormat('dd MMM, yyyy').format(orderDate);
+    final String formattedTime = DateFormat('HH:mm').format(orderDate);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: TSizes.sm),
+      margin: const EdgeInsets.only(bottom: TSizes.md),
+      elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(TSizes.md),
+        padding: const EdgeInsets.all(TSizes.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Order Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Order #${orderId.substring(0, 8)}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.apply(fontWeightDelta: 1),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Order #${orderId.substring(0, 12)}',
+                        style: Theme.of(context).textTheme.titleLarge?.apply(
+                          fontWeightDelta: 2,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Text(
+                        '$formattedDate at $formattedTime',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.apply(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: TSizes.sm,
-                    vertical: TSizes.xs,
+                    horizontal: TSizes.md,
+                    vertical: TSizes.sm,
                   ),
                   decoration: BoxDecoration(
                     color: _getStatusColor(status).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(TSizes.sm),
+                    borderRadius: BorderRadius.circular(TSizes.md),
                     border: Border.all(
                       color: _getStatusColor(status),
-                      width: 1,
+                      width: 2,
                     ),
                   ),
                   child: Text(
                     status.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelSmall?.apply(
+                    style: Theme.of(context).textTheme.labelMedium?.apply(
                       color: _getStatusColor(status),
-                      fontWeightDelta: 1,
+                      fontWeightDelta: 2,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: TSizes.spaceBtwItems / 2),
-            Text(
-              'Customer: $customerName',
-              style: Theme.of(context).textTheme.bodyMedium,
+
+            const SizedBox(height: TSizes.lg),
+
+            // Customer Details Section
+            Container(
+              padding: const EdgeInsets.all(TSizes.md),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(TSizes.md),
+                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.person, color: Colors.blue, size: 20),
+                      const SizedBox(width: TSizes.sm),
+                      Text(
+                        'Customer Details',
+                        style: Theme.of(context).textTheme.titleMedium?.apply(
+                          fontWeightDelta: 1,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: TSizes.sm),
+                  _buildDetailRow('Name', customerName, Icons.person_outline),
+                  _buildDetailRow('Email', customerEmail, Icons.email_outlined),
+                  _buildDetailRow('Phone', customerPhone, Icons.phone_outlined),
+                ],
+              ),
             ),
-            const SizedBox(height: TSizes.spaceBtwItems / 4),
-            Text(
-              'Items: $itemCount • Total: \$${total.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.bodySmall,
+
+            const SizedBox(height: TSizes.lg),
+
+            // Order Items Section
+            Container(
+              padding: const EdgeInsets.all(TSizes.md),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(TSizes.md),
+                border: Border.all(color: Colors.green.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.shopping_bag, color: Colors.green, size: 20),
+                      const SizedBox(width: TSizes.sm),
+                      Text(
+                        'Order Items (${items.length})',
+                        style: Theme.of(context).textTheme.titleMedium?.apply(
+                          fontWeightDelta: 1,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: TSizes.sm),
+                  ...items.map((item) => _buildOrderItemRow(item)).toList(),
+                ],
+              ),
             ),
-            const SizedBox(height: TSizes.spaceBtwItems / 4),
-            Text(
-              'Ordered: $formattedDate',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.apply(color: Colors.grey),
+
+            const SizedBox(height: TSizes.lg),
+
+            // Order Summary Section
+            Container(
+              padding: const EdgeInsets.all(TSizes.md),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(TSizes.md),
+                border: Border.all(color: Colors.orange.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.receipt, color: Colors.orange, size: 20),
+                      const SizedBox(width: TSizes.sm),
+                      Text(
+                        'Order Summary',
+                        style: Theme.of(context).textTheme.titleMedium?.apply(
+                          fontWeightDelta: 1,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: TSizes.sm),
+                  _buildSummaryRow(
+                    'Subtotal',
+                    '\$${subtotal.toStringAsFixed(2)}',
+                  ),
+                  _buildSummaryRow('Tax', '\$${tax.toStringAsFixed(2)}'),
+                  const Divider(),
+                  _buildSummaryRow(
+                    'Total',
+                    '\$${total.toStringAsFixed(2)}',
+                    isTotal: true,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: TSizes.spaceBtwItems),
+
+            const SizedBox(height: TSizes.lg),
+
+            // Action Buttons
             _buildStatusUpdateButtons(context, orderId, status),
           ],
         ),
+      ),
+    );
+  }
+
+  // Build detail row for customer info
+  Widget _buildDetailRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TSizes.xs),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: TSizes.sm),
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w500)),
+          Expanded(
+            child: Text(value, style: const TextStyle(color: Colors.grey)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build order item row
+  Widget _buildOrderItemRow(Map<String, dynamic> item) {
+    final String itemName = item['itemName'] ?? 'Unknown Item';
+    final int quantity = item['quantity'] ?? 0;
+    final double price = (item['itemPrice'] ?? 0.0).toDouble();
+    final double totalPrice = (item['totalPrice'] ?? 0.0).toDouble();
+    final String itemImage = item['itemImageUrl'] ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: TSizes.sm),
+      padding: const EdgeInsets.all(TSizes.sm),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(TSizes.sm),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          // Item Image
+          if (itemImage.isNotEmpty)
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(TSizes.sm),
+                image: DecorationImage(
+                  image: NetworkImage(itemImage),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            )
+          else
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(TSizes.sm),
+              ),
+              child: const Icon(Icons.image, color: Colors.grey),
+            ),
+
+          const SizedBox(width: TSizes.sm),
+
+          // Item Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  itemName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Qty: $quantity × \$${price.toStringAsFixed(2)}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+          // Total Price
+          Text(
+            '\$${totalPrice.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.blue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build summary row
+  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TSizes.xs),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              fontSize: isTotal ? 16 : 14,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              fontSize: isTotal ? 18 : 14,
+              color: isTotal ? Colors.blue : Colors.black,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -574,13 +691,6 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
             "Seller Dashboard",
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          actions: [
-            IconButton(
-              onPressed: () => _addNewItem(context),
-              icon: const Icon(Icons.add),
-              tooltip: 'Add New Item',
-            ),
-          ],
         ),
       ),
       body: Column(
@@ -589,7 +699,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
             controller: _tabController,
             tabs: const [
               Tab(text: "My Store"),
-              Tab(text: "Pending Orders"),
+              Tab(text: "Track Order"),
               Tab(text: "Auction Items"),
             ],
           ),
@@ -761,7 +871,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     },
                   ),
                 ),
-                // Pending Orders Tab
+                // Track Order Tab
                 Padding(
                   padding: const EdgeInsets.all(TSizes.defaultSpace),
                   child: StreamBuilder<QuerySnapshot>(

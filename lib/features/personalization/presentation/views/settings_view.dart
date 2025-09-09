@@ -11,6 +11,7 @@ import 'package:utmmart/features/personalization/presentation/widgets/app_settin
 import 'package:utmmart/features/personalization/presentation/widgets/settings_view_header_section.dart';
 import 'package:utmmart/features/shop/presentation/views/orders_view.dart';
 import 'package:utmmart/features/shop/presentation/views/seller_dashboard_view.dart';
+import 'package:utmmart/features/shop/presentation/views/cart_view.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/features/auth/domain/usecases/get_cached_user_usecase.dart';
 import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
@@ -58,7 +59,9 @@ class SettingsView extends StatelessWidget {
         leading: Iconsax.safe_home,
       ),
       SettingsMenuTileModel(
-        onTap: () {},
+        onTap: () {
+          THelperFunctions.navigateToScreen(context, const CartView());
+        },
         title: "My Cart",
         subtitle: "Add, Remove Products And Move To Checkout",
         leading: Iconsax.shopping_cart,
