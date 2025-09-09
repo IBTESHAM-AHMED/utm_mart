@@ -5,6 +5,7 @@ import 'package:utmmart/core/common/widgets/app_bar.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
+import 'package:intl/intl.dart';
 
 class SellerDashboardView extends StatefulWidget {
   const SellerDashboardView({super.key});
@@ -21,7 +22,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -50,22 +51,6 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
         data['photo'] ??
         data['picture'] ??
         data['itemImage'];
-  }
-
-  // Helper method to get description from various possible field names
-  String _getDescription(Map<String, dynamic> data) {
-    final description =
-        data['itemDescription'] ??
-        data['description'] ??
-        data['desc'] ??
-        data['details'] ??
-        '';
-
-    // Truncate long descriptions for display
-    if (description.length > 50) {
-      return '${description.substring(0, 50)}...';
-    }
-    return description.isEmpty ? 'No description' : description;
   }
 
   // Edit item functionality
@@ -377,6 +362,209 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     }
   }
 
+  // Build pending order card
+  Widget _buildPendingOrderCard(
+    BuildContext context,
+    String orderId,
+    Map<String, dynamic> data,
+  ) {
+    final String status = data['status'] ?? 'pending';
+    final String customerName = data['customerName'] ?? 'Unknown Customer';
+    final double total = (data['total'] ?? 0.0).toDouble();
+    final int itemCount = (data['items'] as List?)?.length ?? 0;
+    final Timestamp createdAt = data['createdAt'] as Timestamp;
+    final DateTime orderDate = createdAt.toDate();
+    final String formattedDate = DateFormat('dd MMM, yyyy').format(orderDate);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: TSizes.sm),
+      child: Padding(
+        padding: const EdgeInsets.all(TSizes.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Order #${orderId.substring(0, 8)}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.apply(fontWeightDelta: 1),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TSizes.sm,
+                    vertical: TSizes.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(TSizes.sm),
+                    border: Border.all(
+                      color: _getStatusColor(status),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    status.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall?.apply(
+                      color: _getStatusColor(status),
+                      fontWeightDelta: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: TSizes.spaceBtwItems / 2),
+            Text(
+              'Customer: $customerName',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: TSizes.spaceBtwItems / 4),
+            Text(
+              'Items: $itemCount • Total: \$${total.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: TSizes.spaceBtwItems / 4),
+            Text(
+              'Ordered: $formattedDate',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.apply(color: Colors.grey),
+            ),
+            const SizedBox(height: TSizes.spaceBtwItems),
+            _buildStatusUpdateButtons(context, orderId, status),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build status update buttons
+  Widget _buildStatusUpdateButtons(
+    BuildContext context,
+    String orderId,
+    String currentStatus,
+  ) {
+    return Row(
+      children: [
+        if (currentStatus == 'pending') ...[
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _updateOrderStatus(orderId, 'approved'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Approve'),
+            ),
+          ),
+          const SizedBox(width: TSizes.sm),
+        ],
+        if (currentStatus == 'approved') ...[
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _updateOrderStatus(orderId, 'shipped'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Mark as Shipped'),
+            ),
+          ),
+          const SizedBox(width: TSizes.sm),
+        ],
+        if (currentStatus == 'shipped') ...[
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _updateOrderStatus(orderId, 'closed'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Close Order'),
+            ),
+          ),
+          const SizedBox(width: TSizes.sm),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: TSizes.md,
+                vertical: TSizes.sm,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(TSizes.sm),
+                border: Border.all(color: Colors.orange),
+              ),
+              child: const Text(
+                'PENDING RECEIVE CONFIRMATION',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // Update order status
+  Future<void> _updateOrderStatus(String orderId, String newStatus) async {
+    try {
+      print('🔄 Updating order $orderId to status: $newStatus');
+
+      await _firebaseService.firestore.collection('orders').doc(orderId).update(
+        {'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()},
+      );
+
+      print('✅ Order status updated successfully');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Order status updated to $newStatus'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error updating order status: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating order status: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Get status color
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'approved':
+        return Colors.blue;
+      case 'shipped':
+        return Colors.purple;
+      case 'received':
+        return Colors.green;
+      case 'closed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -401,6 +589,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
             controller: _tabController,
             tabs: const [
               Tab(text: "My Store"),
+              Tab(text: "Pending Orders"),
               Tab(text: "Auction Items"),
             ],
           ),
@@ -456,10 +645,49 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                         );
                       }
 
+                      // Filter out items with 0 stock
+                      final itemsWithStock = snapshot.data!.docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final stock =
+                            data['itemStock'] ??
+                            data['stock'] ??
+                            data['quantity'] ??
+                            0;
+                        return stock > 0;
+                      }).toList();
+
+                      if (itemsWithStock.isEmpty) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: 64,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: TSizes.spaceBtwItems),
+                              Text(
+                                'No items in stock',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              SizedBox(height: TSizes.spaceBtwItems / 2),
+                              Text(
+                                'All your items are out of stock',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
                       return ListView.builder(
-                        itemCount: snapshot.data!.docs.length,
+                        itemCount: itemsWithStock.length,
                         itemBuilder: (context, index) {
-                          final doc = snapshot.data!.docs[index];
+                          final doc = itemsWithStock[index];
                           final data = doc.data() as Map<String, dynamic>;
 
                           // Debug: Print the document data to see what fields are available
@@ -528,6 +756,108 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                               ),
                             ),
                           );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                // Pending Orders Tab
+                Padding(
+                  padding: const EdgeInsets.all(TSizes.defaultSpace),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _firebaseService.firestore
+                        .collection('orders')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 64,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: TSizes.spaceBtwItems),
+                              Text(
+                                'No pending orders',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              SizedBox(height: TSizes.spaceBtwItems / 2),
+                              Text(
+                                'Orders will appear here when customers place them',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      // Filter orders where current user is the seller and status is not closed/cancelled
+                      final currentUserId = _firebaseService.currentUser?.uid;
+                      final pendingOrders = snapshot.data!.docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final status = data['status'] ?? 'pending';
+
+                        // Check if status is not closed or cancelled
+                        if (status == 'closed' || status == 'cancelled') {
+                          return false;
+                        }
+
+                        // Check if current user is the seller in any of the items
+                        final items = data['items'] as List<dynamic>? ?? [];
+                        return items.any((item) {
+                          final itemData = item as Map<String, dynamic>;
+                          return itemData['sellerUid'] == currentUserId;
+                        });
+                      }).toList();
+
+                      if (pendingOrders.isEmpty) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle_outline,
+                                size: 64,
+                                color: Colors.green,
+                              ),
+                              SizedBox(height: TSizes.spaceBtwItems),
+                              Text(
+                                'All orders processed',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              SizedBox(height: TSizes.spaceBtwItems / 2),
+                              Text(
+                                'No pending orders to process',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        itemCount: pendingOrders.length,
+                        itemBuilder: (context, index) {
+                          final doc = pendingOrders[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          return _buildPendingOrderCard(context, doc.id, data);
                         },
                       );
                     },

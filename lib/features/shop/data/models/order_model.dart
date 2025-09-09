@@ -2,10 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum OrderStatus {
   pending,
-  confirmed,
-  processing,
+  approved,
   shipped,
-  delivered,
+  received,
+  closed,
   cancelled,
   returned,
   refunded,
@@ -261,14 +261,14 @@ class OrderModel {
     switch (status) {
       case OrderStatus.pending:
         return 'Pending';
-      case OrderStatus.confirmed:
-        return 'Confirmed';
-      case OrderStatus.processing:
-        return 'Processing';
+      case OrderStatus.approved:
+        return 'Approved';
       case OrderStatus.shipped:
         return 'Shipped';
-      case OrderStatus.delivered:
-        return 'Delivered';
+      case OrderStatus.received:
+        return 'Received';
+      case OrderStatus.closed:
+        return 'Closed';
       case OrderStatus.cancelled:
         return 'Cancelled';
       case OrderStatus.returned:
@@ -314,11 +314,11 @@ class OrderModel {
 
   // Check if order can be cancelled
   bool get canBeCancelled =>
-      status == OrderStatus.pending || status == OrderStatus.confirmed;
+      status == OrderStatus.pending || status == OrderStatus.approved;
 
   // Check if order can be updated
   bool get canBeUpdated =>
-      status != OrderStatus.delivered && status != OrderStatus.cancelled;
+      status != OrderStatus.closed && status != OrderStatus.cancelled;
 
   // Get seller display name for buyer reference
   String get sellerDisplayName {

@@ -16,8 +16,9 @@ service cloud.firestore {
     match /store/{itemId} {
       allow read: if true; // Anyone can read store items
       allow create: if request.auth != null; // Authenticated users can add items
-      allow update, delete: if request.auth != null && 
-        request.auth.uid == resource.data.sellerUid; // Only item owner can modify
+      allow update: if request.auth != null; // Allow any authenticated user to update (for stock updates)
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.sellerUid; // Only item owner can delete
     }
     
     // Products collection - for future use
@@ -26,11 +27,25 @@ service cloud.firestore {
       allow write: if request.auth != null; // Only authenticated users can write
     }
     
-    // Orders collection - for future use
+    // Orders collection - for order management
     match /orders/{orderId} {
-      allow read, write: if request.auth != null && 
+      // Allow read if user is the customer or if user is seller in any item
+      allow read: if request.auth != null && 
         (request.auth.uid == resource.data.customerId || 
-         request.auth.uid == resource.data.vendorId);
+         request.auth.uid in resource.data.items[].sellerUid);
+      
+      // Allow create if user is the customer placing the order
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.customerId;
+      
+      // Allow update if user is the customer or if user is seller in any item
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.customerId || 
+         request.auth.uid in resource.data.items[].sellerUid);
+      
+      // Allow delete only by the customer who placed the order
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.customerId;
     }
     
     // Categories collection - for future use

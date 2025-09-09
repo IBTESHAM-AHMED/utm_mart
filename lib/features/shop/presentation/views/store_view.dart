@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/common/view_models/app_bar_view_model.dart';
-import 'package:utmmart/core/common/view_models/cart_counter_icon_view_model.dart';
 import 'package:utmmart/core/common/widgets/app_bar.dart';
-import 'package:utmmart/core/common/widgets/cart_counter_icon.dart';
 import 'package:utmmart/core/utils/constants/colors.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
-import 'package:utmmart/core/enums/status.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/features/shop/data/models/store_item_model.dart';
 import 'package:utmmart/features/shop/data/services/store_firestore_service.dart';
@@ -25,10 +23,6 @@ class StoreView extends StatefulWidget {
 class _StoreViewState extends State<StoreView> {
   final StoreFirestoreService _storeService = sl<StoreFirestoreService>();
   final TextEditingController _searchController = TextEditingController();
-
-  List<StoreItemModel> _allItems = [];
-  List<StoreItemModel> _filteredItems = [];
-  bool _isLoading = true;
 
   // Filter variables
   String _selectedCategory = 'All';
@@ -53,7 +47,6 @@ class _StoreViewState extends State<StoreView> {
   @override
   void initState() {
     super.initState();
-    _loadStoreItems();
     _searchController.addListener(_filterItems);
   }
 
@@ -63,77 +56,39 @@ class _StoreViewState extends State<StoreView> {
     super.dispose();
   }
 
-  Future<void> _loadStoreItems() async {
-    setState(() => _isLoading = true);
-
-    print('🔄 Loading store items...');
-    final result = await _storeService.getAllStoreItems();
-    result.fold(
-      (error) {
-        print('❌ Error loading store items: $error');
-        THelperFunctions.showSnackBar(
-          context: context,
-          message: error,
-          type: SnackBarType.error,
-        );
-        setState(() => _isLoading = false);
-      },
-      (items) {
-        print('✅ Successfully loaded ${items.length} store items');
-        for (var item in items) {
-          print(
-            '📦 Item: ${item.itemName} - \$${item.itemPrice} - ${item.itemBrand}',
-          );
-        }
-        setState(() {
-          _allItems = items;
-          _filteredItems = items;
-          _isLoading = false;
-
-          // Populate brands dynamically
-          final brands = items.map((item) => item.itemBrand).toSet().toList();
-          _brands.clear();
-          _brands.add('All');
-          _brands.addAll(brands);
-        });
-      },
-    );
+  void _filterItems() {
+    // Trigger rebuild to update StreamBuilder with new filters
+    setState(() {});
   }
 
-  void _filterItems() {
+  // New method for applying filters in StreamBuilder
+  List<StoreItemModel> _applyFilters(List<StoreItemModel> items) {
     final query = _searchController.text.toLowerCase();
 
-    setState(() {
-      _filteredItems = _allItems.where((item) {
-        // Search filter
-        final matchesSearch =
-            query.isEmpty ||
-            item.itemName.toLowerCase().contains(query) ||
-            item.itemBrand.toLowerCase().contains(query);
+    var filteredItems = items.where((item) {
+      // Search filter
+      final matchesSearch =
+          query.isEmpty ||
+          item.itemName.toLowerCase().contains(query) ||
+          item.itemBrand.toLowerCase().contains(query);
 
-        // Category filter
-        final matchesCategory =
-            _selectedCategory == 'All' ||
-            item.itemCategory == _selectedCategory;
+      // Category filter
+      final matchesCategory =
+          _selectedCategory == 'All' || item.itemCategory == _selectedCategory;
 
-        // Brand filter
-        final matchesBrand =
-            _selectedBrand == 'All' || item.itemBrand == _selectedBrand;
+      // Brand filter
+      final matchesBrand =
+          _selectedBrand == 'All' || item.itemBrand == _selectedBrand;
 
-        // Price filter
-        final matchesPrice =
-            item.itemPrice >= _minPrice && item.itemPrice <= _maxPrice;
+      // Price filter
+      final matchesPrice =
+          item.itemPrice >= _minPrice && item.itemPrice <= _maxPrice;
 
-        return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
-      }).toList();
+      return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
+    }).toList();
 
-      // Apply sorting
-      _sortItems();
-    });
-  }
-
-  void _sortItems() {
-    _filteredItems.sort((a, b) {
+    // Apply sorting
+    filteredItems.sort((a, b) {
       int comparison;
       switch (_sortBy) {
         case 'price':
@@ -149,6 +104,8 @@ class _StoreViewState extends State<StoreView> {
       }
       return _sortAscending ? comparison : -comparison;
     });
+
+    return filteredItems;
   }
 
   @override
@@ -226,17 +183,43 @@ class _StoreViewState extends State<StoreView> {
 
           // Items List
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredItems.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(TSizes.defaultSpace),
-                    itemCount: _filteredItems.length,
-                    itemBuilder: (context, index) {
-                      return _buildStoreItemCard(_filteredItems[index]);
-                    },
-                  ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _storeService.getStoreItemsStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                // Convert documents to StoreItemModel and filter out items with 0 stock
+                final items = snapshot.data!.docs
+                    .map((doc) => StoreItemModel.fromFirestore(doc))
+                    .where((item) => item.itemStock > 0)
+                    .toList();
+
+                if (items.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                // Apply search and filter
+                final filteredItems = _applyFilters(items);
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(TSizes.defaultSpace),
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) {
+                    return _buildStoreItemCard(filteredItems[index]);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -618,12 +601,9 @@ class _StoreViewState extends State<StoreView> {
   }
 
   Future<void> _addNewItem() async {
-    final result = await Navigator.of(context).push<bool>(
+    await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (context) => const AddStoreItemView()),
     );
-
-    if (result == true) {
-      _loadStoreItems(); // Refresh the list
-    }
+    // StreamBuilder will automatically refresh the list
   }
 }

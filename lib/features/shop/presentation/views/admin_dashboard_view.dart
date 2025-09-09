@@ -287,13 +287,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
     switch (status) {
       case OrderStatus.pending:
         return TColors.warning;
-      case OrderStatus.confirmed:
+      case OrderStatus.approved:
         return TColors.info;
-      case OrderStatus.processing:
-        return TColors.primary;
       case OrderStatus.shipped:
         return TColors.secondary;
-      case OrderStatus.delivered:
+      case OrderStatus.received:
+        return TColors.success;
+      case OrderStatus.closed:
         return TColors.success;
       case OrderStatus.cancelled:
         return TColors.error;
