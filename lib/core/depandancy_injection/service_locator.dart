@@ -37,7 +37,7 @@ Future<void> setupServiceLocator() async {
   sl.registerSingleton<FirebaseAuthService>(FirebaseAuthServiceImpl());
   sl.registerSingleton<FirestoreUserService>(FirestoreUserServiceImpl());
   sl.registerSingleton<StoreFirestoreService>(StoreFirestoreServiceImpl());
-  sl.registerSingleton<CartService>(CartService());
+  sl.registerSingleton<CartService>(CartService(sharedPreferences));
 
   // DataSources
   sl.registerSingleton<AuthRemoteDataSource>(AuthRemoteDataSourceImpl());

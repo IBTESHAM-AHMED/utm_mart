@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:utmmart/core/common/widgets/primary_header_container.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
-import 'package:utmmart/features/auth/presentation/logic/get_cached_user/get_cached_user_cubit.dart';
-import 'package:utmmart/core/enums/status.dart';
+// ...existing code...
 import 'package:utmmart/features/personalization/presentation/view_models/settings_menu_tile_model.dart';
 import 'package:utmmart/features/personalization/presentation/views/user_addresses_view.dart';
 import 'package:utmmart/features/personalization/presentation/widgets/account_settings_section.dart';
@@ -13,6 +11,10 @@ import 'package:utmmart/features/personalization/presentation/widgets/app_settin
 import 'package:utmmart/features/personalization/presentation/widgets/settings_view_header_section.dart';
 import 'package:utmmart/features/shop/presentation/views/orders_view.dart';
 import 'package:utmmart/features/shop/presentation/views/seller_dashboard_view.dart';
+import 'package:utmmart/core/depandancy_injection/service_locator.dart';
+import 'package:utmmart/features/auth/domain/usecases/get_cached_user_usecase.dart';
+import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -23,11 +25,13 @@ class SettingsView extends StatelessWidget {
     final List<SettingsMenuTileModel> accountSettingsTiles = [
       // Vendor Dashboard - for all users since anyone can sell
       SettingsMenuTileModel(
-        onTap: () {
-          // Get current user and navigate to vendor dashboard
-          final userState = context.read<CachedUserCubit>().state;
-          if (userState.status == CachedUserStatus.success &&
-              userState.userData != null) {
+        onTap: () async {
+          final cachedUser = await sl<GetCachedUserUsecase>().call();
+          final firebaseUser =
+              sl<FirebaseAuthService>().currentUser ??
+              fb_auth.FirebaseAuth.instance.currentUser;
+
+          if (cachedUser != null || firebaseUser != null) {
             THelperFunctions.navigateToScreen(
               context,
               const SellerDashboardView(),

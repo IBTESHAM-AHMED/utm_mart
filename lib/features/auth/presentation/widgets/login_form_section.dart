@@ -14,6 +14,7 @@ import 'package:utmmart/features/auth/presentation/logic/login/login_state.dart'
 import 'package:utmmart/features/auth/presentation/views/password_configuration/forget_password_view.dart';
 import 'package:utmmart/features/auth/presentation/views/signup/sign_up_view.dart';
 import 'package:utmmart/features/shop/presentation/controller/shop_cubit.dart';
+import 'package:utmmart/features/auth/presentation/logic/get_cached_user/get_cached_user_cubit.dart';
 
 class LoginFormSection extends StatefulWidget {
   const LoginFormSection({super.key});
@@ -63,6 +64,9 @@ class _LoginFormSectionState extends State<LoginFormSection> {
             MultiBlocProvider(
               providers: [
                 BlocProvider(create: (context) => getIt<NavigationMenuCubit>()),
+                BlocProvider(
+                  create: (context) => CachedUserCubit()..getCachedUser(),
+                ),
                 BlocProvider(
                   create: (context) =>
                       getIt<ShopCubit>()

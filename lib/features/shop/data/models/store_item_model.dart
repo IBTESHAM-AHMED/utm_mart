@@ -59,6 +59,42 @@ class StoreItemModel extends Equatable {
   // Create from Firestore document
   factory StoreItemModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+
+    // Helper function to safely parse timestamps
+    DateTime _parseTimestamp(dynamic timestamp) {
+      if (timestamp == null) {
+        print('⚠️ Timestamp is null, using current time');
+        return DateTime.now();
+      }
+
+      print(
+        '🔍 Parsing timestamp: $timestamp (type: ${timestamp.runtimeType})',
+      );
+
+      if (timestamp is Timestamp) {
+        print('✅ Timestamp object detected');
+        return timestamp.toDate();
+      } else if (timestamp is String) {
+        try {
+          print('✅ String timestamp detected, parsing...');
+          final parsed = DateTime.parse(timestamp);
+          print('✅ Successfully parsed string timestamp: $parsed');
+          return parsed;
+        } catch (e) {
+          print('❌ Failed to parse timestamp string: $timestamp, error: $e');
+          return DateTime.now();
+        }
+      } else if (timestamp is DateTime) {
+        print('✅ DateTime object detected');
+        return timestamp;
+      } else {
+        print(
+          '❌ Unknown timestamp type: ${timestamp.runtimeType}, value: $timestamp',
+        );
+        return DateTime.now();
+      }
+    }
+
     return StoreItemModel(
       id: doc.id,
       itemImageUrl: data['itemImageUrl'] ?? '',
@@ -70,8 +106,8 @@ class StoreItemModel extends Equatable {
       itemCategory: data['itemCategory'] ?? '',
       buyerUid: data['buyerUid'],
       sellerUid: data['sellerUid'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: _parseTimestamp(data['createdAt']),
+      updatedAt: _parseTimestamp(data['updatedAt']),
     );
   }
 

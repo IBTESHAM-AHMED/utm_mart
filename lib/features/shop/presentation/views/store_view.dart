@@ -66,9 +66,11 @@ class _StoreViewState extends State<StoreView> {
   Future<void> _loadStoreItems() async {
     setState(() => _isLoading = true);
 
+    print('🔄 Loading store items...');
     final result = await _storeService.getAllStoreItems();
     result.fold(
       (error) {
+        print('❌ Error loading store items: $error');
         THelperFunctions.showSnackBar(
           context: context,
           message: error,
@@ -77,6 +79,12 @@ class _StoreViewState extends State<StoreView> {
         setState(() => _isLoading = false);
       },
       (items) {
+        print('✅ Successfully loaded ${items.length} store items');
+        for (var item in items) {
+          print(
+            '📦 Item: ${item.itemName} - \$${item.itemPrice} - ${item.itemBrand}',
+          );
+        }
         setState(() {
           _allItems = items;
           _filteredItems = items;

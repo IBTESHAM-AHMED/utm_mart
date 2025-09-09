@@ -1,12 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-// TODO: AddressModel will be implemented when we add order functionality
-// import 'package:utmmart/features/shop/data/models/address_model.dart';
 
 enum OrderStatus {
   pending,
-  approved,
+  confirmed,
+  processing,
   shipped,
-  received,
+  delivered,
   cancelled,
   returned,
   refunded,
@@ -82,7 +81,54 @@ class OrderModel {
 
   // Factory constructor to create OrderModel from Firestore document
   factory OrderModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final Map<String, dynamic> data =
+        (doc.data() as Map<String, dynamic>?) ?? {};
+
+    DateTime parseToDateTime(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+      return DateTime.now();
+    }
+
+    List<OrderItemModel> parseItems(dynamic raw) {
+      if (raw == null) return <OrderItemModel>[];
+      if (raw is List) {
+        return raw
+            .where((e) => e != null)
+            .map<OrderItemModel>(
+              (e) =>
+                  OrderItemModel.fromMap(Map<String, dynamic>.from(e as Map)),
+            )
+            .toList();
+      }
+      return <OrderItemModel>[];
+    }
+
+    OrderStatus parseOrderStatus(String? v) {
+      if (v == null) return OrderStatus.pending;
+      return OrderStatus.values.firstWhere(
+        (e) => e.toString().split('.').last == v,
+        orElse: () => OrderStatus.pending,
+      );
+    }
+
+    PaymentStatus parsePaymentStatus(String? v) {
+      if (v == null) return PaymentStatus.pending;
+      return PaymentStatus.values.firstWhere(
+        (e) => e.toString().split('.').last == v,
+        orElse: () => PaymentStatus.pending,
+      );
+    }
+
+    PaymentMethod parsePaymentMethod(String? v) {
+      if (v == null) return PaymentMethod.cashOnDelivery;
+      return PaymentMethod.values.firstWhere(
+        (e) => e.toString().split('.').last == v,
+        orElse: () => PaymentMethod.cashOnDelivery,
+      );
+    }
 
     return OrderModel(
       id: doc.id,
@@ -90,38 +136,25 @@ class OrderModel {
       customerName: data['customerName'] ?? '',
       customerEmail: data['customerEmail'] ?? '',
       customerPhone: data['customerPhone'] ?? '',
-      items:
-          (data['items'] as List<dynamic>?)
-              ?.map((item) => OrderItemModel.fromMap(item))
-              .toList() ??
-          [],
+      items: parseItems(data['items']),
       subtotal: (data['subtotal'] ?? 0.0).toDouble(),
       tax: (data['tax'] ?? 0.0).toDouble(),
       shippingCost: (data['shippingCost'] ?? 0.0).toDouble(),
       total: (data['total'] ?? 0.0).toDouble(),
       currency: data['currency'] ?? 'USD',
-      status: OrderStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == data['status'],
-        orElse: () => OrderStatus.pending,
-      ),
-      paymentStatus: PaymentStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == data['paymentStatus'],
-        orElse: () => PaymentStatus.pending,
-      ),
-      paymentMethod: PaymentMethod.values.firstWhere(
-        (e) => e.toString().split('.').last == data['paymentMethod'],
-        orElse: () => PaymentMethod.cashOnDelivery,
-      ),
+      status: parseOrderStatus(data['status'] as String?),
+      paymentStatus: parsePaymentStatus(data['paymentStatus'] as String?),
+      paymentMethod: parsePaymentMethod(data['paymentMethod'] as String?),
       trackingNumber: data['trackingNumber'],
       notes: data['notes'],
       vendorId: data['vendorId'] ?? '',
       vendorName: data['vendorName'],
       vendorEmail: data['vendorEmail'],
       vendorPhone: data['vendorPhone'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      createdAt: parseToDateTime(data['createdAt']),
+      updatedAt: parseToDateTime(data['updatedAt']),
       estimatedDelivery: data['estimatedDelivery'] != null
-          ? (data['estimatedDelivery'] as Timestamp).toDate()
+          ? parseToDateTime(data['estimatedDelivery'])
           : null,
       // TODO: Address parsing will be added when we implement order functionality
       // shippingAddress: AddressModel.fromMap(data['shippingAddress'] ?? {}),
@@ -319,7 +352,7 @@ class OrderModel {
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => id?.hashCode ?? 0;
 }
 
 class OrderItemModel {
@@ -360,4 +393,18 @@ class OrderItemModel {
       'total': total,
     };
   }
+
+  @override
+  String toString() {
+    return 'OrderItemModel(productId: $productId, productName: $productName, quantity: $quantity, total: $total)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is OrderItemModel && other.productId == productId;
+  }
+
+  @override
+  int get hashCode => productId.hashCode;
 }

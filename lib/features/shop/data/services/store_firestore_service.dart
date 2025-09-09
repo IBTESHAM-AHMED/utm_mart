@@ -35,17 +35,28 @@ class StoreFirestoreServiceImpl implements StoreFirestoreService {
   @override
   Future<Either<String, List<StoreItemModel>>> getAllStoreItems() async {
     try {
+      print('🔍 Querying store collection...');
       final querySnapshot = await _firestore
           .collection(_storeCollection)
           .orderBy('createdAt', descending: true)
           .get();
 
-      final items = querySnapshot.docs
-          .map((doc) => StoreItemModel.fromFirestore(doc))
-          .toList();
+      print(
+        '📊 Found ${querySnapshot.docs.length} documents in store collection',
+      );
 
+      final items = querySnapshot.docs.map((doc) {
+        print('📄 Document ID: ${doc.id}');
+        print('📄 Document data: ${doc.data()}');
+        print('📄 createdAt type: ${doc.data()['createdAt']?.runtimeType}');
+        print('📄 updatedAt type: ${doc.data()['updatedAt']?.runtimeType}');
+        return StoreItemModel.fromFirestore(doc);
+      }).toList();
+
+      print('✅ Successfully parsed ${items.length} items');
       return Right(items);
     } catch (e) {
+      print('❌ Error in getAllStoreItems: $e');
       return Left('Failed to get store items: ${e.toString()}');
     }
   }
