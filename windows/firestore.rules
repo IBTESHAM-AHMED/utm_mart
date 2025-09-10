@@ -72,5 +72,25 @@ service cloud.firestore {
       allow delete: if request.auth != null && 
         request.auth.uid == resource.data.userUid;
     }
+    
+    // Auctions collection - for auction listings
+    match /auctions/{auctionId} {
+      // Allow read if user is authenticated
+      allow read: if request.auth != null;
+      
+      // Allow create if user is authenticated
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.sellerUid;
+      
+      // Allow update if user is the seller or placing a bid
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.sellerUid ||
+        request.auth.uid in request.resource.data.bids[].bidderUid
+      );
+      
+      // Allow delete if user is the seller
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.sellerUid;
+    }
   }
 }

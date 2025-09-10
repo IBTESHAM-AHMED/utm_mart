@@ -17,38 +17,39 @@ class NavigationMenu extends StatelessWidget {
         final selectedIndex = context.read<NavigationMenuCubit>().selectedIndex;
         final dark = THelperFunctions.isDarkMode(context);
         return Scaffold(
-            bottomNavigationBar: NavigationBar(
-              elevation: 0,
-              height: 80,
-              backgroundColor: dark ? TColors.black : Colors.white,
-              indicatorColor: dark
-                  ? TColors.white.withValues(alpha: 0.1)
-                  : TColors.black.withValues(alpha: 0.1),
-              selectedIndex: selectedIndex,
-              onDestinationSelected: (int index) {
-                context.read<NavigationMenuCubit>().changeIndex(index);
-              },
-              destinations: const [
-                //home store wishlist profile
-                NavigationDestination(
-                  icon: Icon(Iconsax.home),
-                  label: TTexts.homeView,
-                ),
-                NavigationDestination(
-                  icon: Icon(Iconsax.shop),
-                  label: TTexts.storeView,
-                ),
-                NavigationDestination(
-                  icon: Icon(Iconsax.heart),
-                  label: TTexts.wishlistView,
-                ),
-                NavigationDestination(
-                  icon: Icon(Iconsax.user),
-                  label: TTexts.profileView,
-                ),
-              ],
-            ),
-            body: context.read<NavigationMenuCubit>().getScreen());
+          bottomNavigationBar: NavigationBar(
+            elevation: 0,
+            height: 80,
+            backgroundColor: dark ? TColors.black : Colors.white,
+            indicatorColor: dark
+                ? TColors.white.withValues(alpha: 0.1)
+                : TColors.black.withValues(alpha: 0.1),
+            selectedIndex: selectedIndex,
+            onDestinationSelected: (int index) {
+              context.read<NavigationMenuCubit>().changeIndex(index);
+            },
+            destinations: const [
+              //home store wishlist profile
+              NavigationDestination(
+                icon: Icon(Iconsax.home),
+                label: TTexts.homeView,
+              ),
+              NavigationDestination(
+                icon: Icon(Iconsax.shop),
+                label: TTexts.storeView,
+              ),
+              NavigationDestination(
+                icon: Icon(Iconsax.crown),
+                label: 'Auctions',
+              ),
+              NavigationDestination(
+                icon: Icon(Iconsax.user),
+                label: TTexts.profileView,
+              ),
+            ],
+          ),
+          body: context.read<NavigationMenuCubit>().getScreen(),
+        );
       },
     );
   }

@@ -9,6 +9,7 @@ import 'package:utmmart/features/auth/data/data_sources/firestore_user_service.d
 import 'package:utmmart/features/shop/data/services/store_firestore_service.dart';
 import 'package:utmmart/features/shop/data/services/cart_service.dart';
 import 'package:utmmart/features/personalization/data/services/address_service.dart';
+import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
 import 'package:utmmart/features/auth/data/repository/auth_repo_impl.dart';
 import 'package:utmmart/features/auth/domain/repository/auth_repo.dart';
 import 'package:utmmart/features/auth/domain/usecases/get_cached_user_usecase.dart';
@@ -40,6 +41,7 @@ Future<void> setupServiceLocator() async {
   sl.registerSingleton<StoreFirestoreService>(StoreFirestoreServiceImpl());
   sl.registerSingleton<CartService>(CartService(sharedPreferences));
   sl.registerSingleton<AddressService>(AddressService());
+  sl.registerSingleton<AuctionFirestoreService>(AuctionFirestoreService());
 
   // DataSources
   sl.registerSingleton<AuthRemoteDataSource>(AuthRemoteDataSourceImpl());
