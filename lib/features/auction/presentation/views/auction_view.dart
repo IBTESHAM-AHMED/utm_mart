@@ -11,7 +11,6 @@ import 'package:utmmart/features/auction/data/models/auction_model.dart';
 import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
 import 'package:utmmart/features/auction/presentation/views/create_auction_view.dart';
 import 'package:utmmart/features/auction/presentation/views/auction_detail_view.dart';
-import 'package:utmmart/features/auction/presentation/widgets/auction_card.dart';
 
 class AuctionView extends StatefulWidget {
   const AuctionView({super.key});
@@ -39,6 +38,7 @@ class _AuctionViewState extends State<AuctionView> {
     'Beauty',
     'Art',
     'Collectibles',
+    'Vehicle',
     'Other',
   ];
 
@@ -275,26 +275,12 @@ class _AuctionViewState extends State<AuctionView> {
 
                 final filteredAuctions = _applyFilters(auctions);
 
-                return GridView.builder(
+                return ListView.builder(
                   padding: const EdgeInsets.all(TSizes.defaultSpace),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: TSizes.gridViewSpacing,
-                    crossAxisSpacing: TSizes.gridViewSpacing,
-                    childAspectRatio: 0.7,
-                  ),
                   itemCount: filteredAuctions.length,
                   itemBuilder: (context, index) {
                     final auction = filteredAuctions[index];
-                    return AuctionCard(
-                      auction: auction,
-                      onTap: () {
-                        THelperFunctions.navigateToScreen(
-                          context,
-                          AuctionDetailView(auction: auction),
-                        );
-                      },
-                    );
+                    return _buildAuctionCard(auction);
                   },
                 );
               },
@@ -310,5 +296,248 @@ class _AuctionViewState extends State<AuctionView> {
         child: const Icon(Iconsax.add, color: TColors.white),
       ),
     );
+  }
+
+  Widget _buildAuctionCard(AuctionModel auction) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          THelperFunctions.navigateToScreen(
+            context,
+            AuctionDetailView(auction: auction),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Auction Image
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: TColors.grey.withOpacity(0.3)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        auction.imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: TColors.grey.withOpacity(0.1),
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: TColors.grey.withOpacity(0.1),
+                            child: const Icon(Icons.image_not_supported),
+                          );
+                        },
+                      ),
+                      // Category badge
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: TColors.primary.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            auction.category,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 16),
+
+              // Auction Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Auction Title
+                    Text(
+                      auction.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Auction Description
+                    Text(
+                      auction.description,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: TColors.grey),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Current Bid and Starting Price Row
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: TColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Current: \$${auction.currentBid.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: TColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 6),
+
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Start: \$${auction.startingPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Seller, Time Remaining and Status Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'by ${auction.sellerName}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: auction.isActive
+                                ? Colors.orange.withOpacity(0.1)
+                                : Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _formatTimeRemaining(auction.timeRemaining),
+                            style: TextStyle(
+                              color: auction.isActive
+                                  ? Colors.orange
+                                  : Colors.grey,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: auction.isActive
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            auction.isActive ? 'Active' : 'Ended',
+                            style: TextStyle(
+                              color: auction.isActive
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatTimeRemaining(Duration duration) {
+    if (duration.inDays > 0) {
+      return '${duration.inDays}d left';
+    } else if (duration.inHours > 0) {
+      return '${duration.inHours}h left';
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}m left';
+    } else {
+      return 'Ending soon';
+    }
   }
 }

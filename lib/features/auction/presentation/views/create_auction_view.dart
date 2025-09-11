@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:utmmart/core/common/view_models/app_bar_view_model.dart';
 import 'package:utmmart/core/common/widgets/app_bar.dart';
 import 'package:utmmart/core/utils/constants/colors.dart';
@@ -11,6 +13,7 @@ import 'package:utmmart/features/auction/data/models/auction_model.dart';
 import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
 import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
 import 'package:utmmart/features/auth/data/models/firestore_user_model.dart';
+import 'package:utmmart/features/personalization/data/services/image_upload_service.dart';
 
 class CreateAuctionView extends StatefulWidget {
   const CreateAuctionView({super.key});
@@ -22,18 +25,19 @@ class CreateAuctionView extends StatefulWidget {
 class _CreateAuctionViewState extends State<CreateAuctionView> {
   final AuctionFirestoreService _auctionService = sl<AuctionFirestoreService>();
   final FirebaseAuthService _authService = sl<FirebaseAuthService>();
+  final ImageUploadService _imageUploadService = ImageUploadService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _imageUrlController = TextEditingController();
   final _startingPriceController = TextEditingController();
-  final _buyNowPriceController = TextEditingController();
 
   String _selectedCategory = 'Electronics';
   DateTime _endTime = DateTime.now().add(const Duration(days: 7));
   FirestoreUserModel? _currentUser;
-  bool _isLoading = false;
+  bool _isSubmitting = false;
+  File? _selectedImage;
 
   final List<String> _categories = [
     'Electronics',
@@ -44,6 +48,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
     'Beauty',
     'Art',
     'Collectibles',
+    'Vehicle',
     'Other',
   ];
 
@@ -57,9 +62,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _imageUrlController.dispose();
     _startingPriceController.dispose();
-    _buyNowPriceController.dispose();
     super.dispose();
   }
 
@@ -81,55 +84,176 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
     );
   }
 
-  Future<void> _createAuction() async {
-    if (!_formKey.currentState!.validate() || _currentUser == null) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _pickImage() async {
     try {
-      final auction = AuctionModel(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        imageUrl: _imageUrlController.text.trim(),
-        category: _selectedCategory,
-        sellerUid: _currentUser!.uid,
-        sellerName: _currentUser!.fullName,
-        startingPrice: double.parse(_startingPriceController.text),
-        currentBid: double.parse(_startingPriceController.text),
-        buyNowPrice: _buyNowPriceController.text.isNotEmpty
-            ? double.parse(_buyNowPriceController.text)
-            : null,
-        startTime: DateTime.now(),
-        endTime: _endTime,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
       );
 
-      await _auctionService.createAuction(auction);
-
-      if (mounted) {
-        THelperFunctions.showSnackBar(
-          context: context,
-          message: 'Auction created successfully!',
-          type: SnackBarType.success,
-        );
-        Navigator.pop(context);
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
       }
     } catch (e) {
       if (mounted) {
         THelperFunctions.showSnackBar(
           context: context,
-          message: 'Error creating auction: $e',
+          message: 'Error picking image: $e',
           type: SnackBarType.error,
         );
       }
+    }
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Item Image',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Image Upload Option
+        Center(
+          child: GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                border: Border.all(color: TColors.grey),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: _selectedImage != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_a_photo,
+                          size: 48,
+                          color: TColors.primary,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tap to select image',
+                          style: TextStyle(
+                            color: TColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Required',
+                          style: TextStyle(color: TColors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _createAuction() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // Check if image is selected
+      if (_selectedImage == null) {
+        THelperFunctions.showSnackBar(
+          context: context,
+          message: 'Please select an image',
+          type: SnackBarType.error,
+        );
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
+      // Upload image
+      final imageUrl = await _imageUploadService.uploadImage(_selectedImage!);
+      if (imageUrl == null) {
+        THelperFunctions.showSnackBar(
+          context: context,
+          message: 'Failed to upload image. Please try again.',
+          type: SnackBarType.error,
+        );
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
+      // Get current user
+      final userResult = await _authService.getCurrentUserDocument();
+      final currentUser = userResult.fold((error) => null, (user) => user);
+
+      if (currentUser == null) {
+        THelperFunctions.showSnackBar(
+          context: context,
+          message: 'User not found. Please login again.',
+          type: SnackBarType.error,
+        );
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
+      // Create auction
+      final auction = AuctionModel(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        imageUrl: imageUrl,
+        category: _selectedCategory,
+        sellerUid: currentUser.uid,
+        sellerName: currentUser.fullName,
+        startingPrice: double.parse(_startingPriceController.text.trim()),
+        currentBid: double.parse(_startingPriceController.text.trim()),
+        buyNowPrice: null, // Removed buy now price
+        startTime: DateTime.now(),
+        endTime: _endTime,
+        status: 'active',
+        bids: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      // Add to Firestore
+      await _auctionService.createAuction(auction);
+
+      THelperFunctions.showSnackBar(
+        context: context,
+        message: 'Auction created successfully!',
+        type: SnackBarType.success,
+      );
+
+      // Go back to auction page
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      });
+    } catch (e) {
+      THelperFunctions.showSnackBar(
+        context: context,
+        message: 'Failed to create auction: ${e.toString()}',
+        type: SnackBarType.error,
+      );
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -189,21 +313,8 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
               ),
               const SizedBox(height: TSizes.spaceBtwItems),
 
-              // Image URL
-              TextFormField(
-                controller: _imageUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'Image URL',
-                  hintText: 'https://example.com/image.jpg',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an image URL';
-                  }
-                  return null;
-                },
-              ),
+              // Image Upload Section
+              _buildImageSection(),
               const SizedBox(height: TSizes.spaceBtwItems),
 
               // Category
@@ -245,33 +356,6 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
                   }
                   if (double.parse(value) <= 0) {
                     return 'Price must be greater than 0';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: TSizes.spaceBtwItems),
-
-              // Buy Now Price (Optional)
-              TextFormField(
-                controller: _buyNowPriceController,
-                decoration: const InputDecoration(
-                  labelText: 'Buy Now Price (\$) - Optional',
-                  hintText: '0.00',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    if (double.tryParse(value) == null) {
-                      return 'Please enter a valid price';
-                    }
-                    if (double.parse(value) <= 0) {
-                      return 'Price must be greater than 0';
-                    }
-                    if (double.parse(value) <=
-                        double.parse(_startingPriceController.text)) {
-                      return 'Buy now price must be higher than starting price';
-                    }
                   }
                   return null;
                 },
@@ -322,18 +406,33 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _createAuction,
+                  onPressed: _isSubmitting ? null : _createAuction,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: TColors.primary,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: TSizes.buttonHeight,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                  child: _isSubmitting
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: TColors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Creating Auction...',
+                              style: TextStyle(color: TColors.white),
+                            ),
+                          ],
+                        )
                       : const Text(
                           'Create Auction',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: TColors.white),
                         ),
                 ),
               ),

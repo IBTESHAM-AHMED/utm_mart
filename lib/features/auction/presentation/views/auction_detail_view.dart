@@ -85,11 +85,14 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                   ),
                 ),
                 const SizedBox(width: TSizes.spaceBtwItems),
-                Text(
-                  'by ${widget.auction.sellerName}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                Expanded(
+                  child: Text(
+                    'by ${widget.auction.sellerName}',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -155,30 +158,6 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                       ),
                     ],
                   ),
-                  if (widget.auction.buyNowPrice != null) ...[
-                    const SizedBox(height: TSizes.spaceBtwItems / 2),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Buy Now Price',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          '\$${widget.auction.buyNowPrice!.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -196,27 +175,43 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                   color: widget.auction.isActive ? Colors.green : Colors.red,
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    widget.auction.isActive
-                        ? Iconsax.clock
-                        : Iconsax.close_circle,
-                    color: widget.auction.isActive ? Colors.green : Colors.red,
-                  ),
-                  const SizedBox(width: TSizes.spaceBtwItems / 2),
-                  Text(
-                    widget.auction.isActive
-                        ? 'Time Remaining: ${_formatTimeRemaining(widget.auction.timeRemaining)}'
-                        : 'Auction Ended',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TSizes.sm,
+                  vertical: TSizes.xs,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      widget.auction.isActive
+                          ? Iconsax.clock
+                          : Iconsax.close_circle,
                       color: widget.auction.isActive
                           ? Colors.green
                           : Colors.red,
-                      fontWeight: FontWeight.bold,
+                      size: 18,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: TSizes.spaceBtwItems / 2),
+                    Flexible(
+                      child: Text(
+                        widget.auction.isActive
+                            ? 'Time Left: ${_formatTimeRemaining(widget.auction.timeRemaining)}'
+                            : 'Auction Ended',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: widget.auction.isActive
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: TSizes.spaceBtwItems),
@@ -264,29 +259,6 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                   ),
                 ],
               ),
-              if (widget.auction.buyNowPrice != null) ...[
-                const SizedBox(height: TSizes.spaceBtwItems),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Implement buy now
-                      THelperFunctions.showSnackBar(
-                        context: context,
-                        message: 'Buy now functionality coming soon!',
-                        type: SnackBarType.info,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
-                    child: Text(
-                      'Buy Now - \$${widget.auction.buyNowPrice!.toStringAsFixed(2)}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ],
         ),

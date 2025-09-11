@@ -46,6 +46,7 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
     'Home',
     'Sports',
     'Beauty',
+    'Vehicle',
     'Other',
   ];
 

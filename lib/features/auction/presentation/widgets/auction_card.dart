@@ -94,23 +94,26 @@ class AuctionCard extends StatelessWidget {
             ),
 
             // Auction Details
-            Expanded(
-              flex: 2,
+            Flexible(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(6.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Title
-                    Text(
-                      auction.title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        auction.title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
+
+                    const SizedBox(height: 4),
 
                     // Seller
                     Text(
@@ -122,47 +125,26 @@ class AuctionCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
 
+                    const SizedBox(height: 4),
+
                     // Price and Bid Info
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Current Bid',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.grey[600]),
-                            ),
-                            Text(
-                              '\$${auction.currentBid.toStringAsFixed(2)}',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: TColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ],
+                        Text(
+                          'Current Bid',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
-                        if (auction.buyNowPrice != null)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Buy Now',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.grey[600]),
+                        Text(
+                          '\$${auction.currentBid.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: TColors.primary,
+                                fontWeight: FontWeight.bold,
                               ),
-                              Text(
-                                '\$${auction.buyNowPrice!.toStringAsFixed(2)}',
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ],
-                          ),
+                        ),
                       ],
                     ),
                   ],

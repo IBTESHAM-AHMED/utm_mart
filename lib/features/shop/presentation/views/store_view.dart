@@ -40,6 +40,7 @@ class _StoreViewState extends State<StoreView> {
     'Home',
     'Sports',
     'Beauty',
+    'Vehicle',
     'Other',
   ];
   final List<String> _brands = ['All']; // Will be populated dynamically
