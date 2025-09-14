@@ -1,10 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:utmmart/core/common/view_models/app_bar_view_model.dart';
 import 'package:utmmart/core/common/widgets/app_bar.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
+import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
+import 'package:utmmart/features/auction/data/models/auction_model.dart';
+import 'package:utmmart/features/auction/presentation/views/auction_detail_view.dart';
+import 'package:utmmart/features/auction/presentation/views/create_auction_view.dart';
+import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:intl/intl.dart';
 
 class SellerDashboardView extends StatefulWidget {
@@ -17,17 +24,53 @@ class SellerDashboardView extends StatefulWidget {
 class _SellerDashboardViewState extends State<SellerDashboardView>
     with SingleTickerProviderStateMixin {
   final FirebaseService _firebaseService = sl<FirebaseService>();
+  final AuctionFirestoreService _auctionService = sl<AuctionFirestoreService>();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   late TabController _tabController;
+  String? _currentUserUid;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _getCurrentUser();
+    _startTimer();
+  }
+
+  Future<void> _getCurrentUser() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      setState(() {
+        _currentUserUid = user.uid;
+      });
+    }
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        setState(() {
+          // This will trigger a rebuild to update time remaining
+        });
+        // Check for expired auctions
+        _checkExpiredAuctions();
+      }
+    });
+  }
+
+  Future<void> _checkExpiredAuctions() async {
+    try {
+      await _auctionService.checkAndEndExpiredAuctions();
+    } catch (e) {
+      print('Error checking expired auctions: $e');
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -682,6 +725,405 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     }
   }
 
+  // Build auction items tab
+  Widget _buildAuctionItemsTab() {
+    if (_currentUserUid == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          // Sub-tab bar for Active and Closed auctions
+          Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: TabBar(
+              labelColor: Colors.blue,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: Colors.blue,
+              tabs: const [
+                Tab(text: 'Active Auctions'),
+                Tab(text: 'Closed Auctions'),
+              ],
+            ),
+          ),
+
+          // Sub-tab views
+          Expanded(
+            child: TabBarView(
+              children: [_buildActiveAuctionsTab(), _buildClosedAuctionsTab()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveAuctionsTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _auctionService.getUserActiveAuctionsStream(_currentUserUid!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: TSizes.spaceBtwItems),
+                Text(
+                  'Error loading auctions',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: TSizes.spaceBtwItems / 2),
+                Text(
+                  snapshot.error.toString(),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.gavel, size: 64, color: Colors.grey),
+                const SizedBox(height: TSizes.spaceBtwItems),
+                Text(
+                  'No active auctions',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: TSizes.spaceBtwItems / 2),
+                Text(
+                  'Create your first auction to get started!',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: TSizes.spaceBtwItems),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    THelperFunctions.navigateToScreen(
+                      context,
+                      const CreateAuctionView(),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Create Auction'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final auctions = snapshot.data!.docs
+            .map((doc) => AuctionModel.fromFirestore(doc))
+            .toList();
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(TSizes.defaultSpace),
+          itemCount: auctions.length,
+          itemBuilder: (context, index) {
+            final auction = auctions[index];
+            return _buildAuctionCard(auction, isActive: true);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildClosedAuctionsTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _auctionService.getUserClosedAuctionsStream(_currentUserUid!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: TSizes.spaceBtwItems),
+                Text(
+                  'Error loading auctions',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: TSizes.spaceBtwItems / 2),
+                Text(
+                  snapshot.error.toString(),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.history, size: 64, color: Colors.grey),
+                const SizedBox(height: TSizes.spaceBtwItems),
+                Text(
+                  'No closed auctions',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: TSizes.spaceBtwItems / 2),
+                Text(
+                  'Your completed auctions will appear here.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        final auctions = snapshot.data!.docs
+            .map((doc) => AuctionModel.fromFirestore(doc))
+            .toList();
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(TSizes.defaultSpace),
+          itemCount: auctions.length,
+          itemBuilder: (context, index) {
+            final auction = auctions[index];
+            return _buildAuctionCard(auction, isActive: false);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAuctionCard(AuctionModel auction, {required bool isActive}) {
+    final highestBid = auction.highestBid;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: TSizes.md),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          THelperFunctions.navigateToScreen(
+            context,
+            AuctionDetailView(auction: auction),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(TSizes.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Row
+              Row(
+                children: [
+                  // Auction Image
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        auction.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey.withOpacity(0.1),
+                            child: const Icon(Icons.image_not_supported),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: TSizes.sm),
+
+                  // Auction Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          auction.title,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          auction.category,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              isActive ? Icons.access_time : Icons.check_circle,
+                              size: 14,
+                              color: isActive ? Colors.green : Colors.red,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isActive ? 'Active' : 'Ended',
+                              style: TextStyle(
+                                color: isActive ? Colors.green : Colors.red,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Current Bid
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '\$${auction.currentBid.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Current Bid',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: TSizes.sm),
+
+              // Bidding Info
+              if (highestBid != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(TSizes.sm),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Colors.blue.withOpacity(0.1)
+                        : Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isActive ? Colors.blue : Colors.green,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isActive ? Icons.person : Icons.emoji_events,
+                        size: 16,
+                        color: isActive ? Colors.blue : Colors.green,
+                      ),
+                      const SizedBox(width: TSizes.xs),
+                      Text(
+                        isActive
+                            ? 'Highest bidder: ${highestBid.bidderName}'
+                            : 'Winner: ${highestBid.bidderName}',
+                        style: TextStyle(
+                          color: isActive
+                              ? Colors.blue[700]
+                              : Colors.green[700],
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: TSizes.sm),
+              ],
+
+              // Time Info
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Started: ${_formatDate(auction.startTime)}',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                  ),
+                  Text(
+                    isActive
+                        ? 'Ends: ${_formatTimeRemaining(auction.endTime)}'
+                        : 'Ended: ${_formatDate(auction.endTime)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isActive ? Colors.orange[600] : Colors.red[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  String _formatTimeRemaining(DateTime endTime) {
+    final now = DateTime.now();
+    if (now.isAfter(endTime)) {
+      return 'Ended';
+    }
+
+    final difference = endTime.difference(now);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} left';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} left';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} left';
+    } else {
+      return 'Ending soon';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -973,25 +1415,8 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     },
                   ),
                 ),
-                // Auction Items Tab - Empty for now
-                const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.gavel, size: 64, color: Colors.grey),
-                      SizedBox(height: TSizes.spaceBtwItems),
-                      Text(
-                        'Auction Items',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      SizedBox(height: TSizes.spaceBtwItems / 2),
-                      Text(
-                        'Coming soon...',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
+                // Auction Items Tab
+                _buildAuctionItemsTab(),
               ],
             ),
           ),

@@ -184,44 +184,57 @@ class _OrderListItemState extends State<OrderListItem> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: TSizes.md,
-                    vertical: TSizes.sm,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getPaymentStatusColor(
-                      paymentStatus,
-                    ).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(TSizes.md),
-                    border: Border.all(
-                      color: _getPaymentStatusColor(paymentStatus),
-                      width: 1,
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: TSizes.md,
+                      vertical: TSizes.sm,
                     ),
-                  ),
-                  child: Text(
-                    'Payment: ${paymentStatus.toUpperCase()}',
-                    style: Theme.of(context).textTheme.labelMedium?.apply(
-                      color: _getPaymentStatusColor(paymentStatus),
-                      fontWeightDelta: 1,
+                    decoration: BoxDecoration(
+                      color: _getPaymentStatusColor(
+                        paymentStatus,
+                      ).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(TSizes.md),
+                      border: Border.all(
+                        color: _getPaymentStatusColor(paymentStatus),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      'Payment: ${paymentStatus.toUpperCase()}',
+                      style: Theme.of(context).textTheme.labelMedium?.apply(
+                        color: _getPaymentStatusColor(paymentStatus),
+                        fontWeightDelta: 1,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
 
+                const SizedBox(width: TSizes.sm),
+
                 // Add confirmation button for shipped orders
                 if (status == 'shipped')
-                  ElevatedButton.icon(
-                    onPressed: () => _showReceiveConfirmation(context, orderId),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: TSizes.lg,
-                        vertical: TSizes.sm,
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          _showReceiveConfirmation(context, orderId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: TSizes.sm,
+                          vertical: TSizes.sm,
+                        ),
+                      ),
+                      icon: const Icon(Icons.check_circle, size: 16),
+                      label: const Text(
+                        'Confirm',
+                        style: TextStyle(fontSize: 12),
                       ),
                     ),
-                    icon: const Icon(Icons.check_circle, size: 18),
-                    label: const Text('Confirm Received'),
                   ),
               ],
             ),

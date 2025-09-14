@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own documents
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow users to create their own document during registration
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Store collection - for marketplace items
+    match /store/{itemId} {
+      allow read: if true; // Anyone can read store items
+      allow create: if request.auth != null; // Authenticated users can add items
+      allow update: if request.auth != null; // Allow any authenticated user to update (for stock updates)
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.sellerUid; // Only item owner can delete
+    }
+    
+    // Products collection - for future use
+    match /products/{productId} {
+      allow read: if true; // Anyone can read products
+      allow write: if request.auth != null; // Only authenticated users can write
+    }
+    
+    // Orders collection - for order management
+    match /orders/{orderId} {
+      // Allow read if user is the customer OR if user is authenticated (for seller access)
+      allow read: if request.auth != null;
+      
+      // Allow create if user is the customer placing the order OR if it's an auction order
+      allow create: if request.auth != null && (
+        request.auth.uid == request.resource.data.customerId ||
+        request.resource.data.isAuctionOrder == true
+      );
+      
+      // Allow update if user is authenticated (for seller updates)
+      allow update: if request.auth != null;
+      
+      // Allow delete only by the customer who placed the order
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.customerId;
+    }
+    
+    // Categories collection - for future use
+    match /categories/{categoryId} {
+      allow read: if true; // Anyone can read categories
+      allow write: if request.auth != null; // Only authenticated users can write
+    }
+    
+    // Addresses collection - for user addresses
+    match /addresses/{addressId} {
+      // Allow read if user is the owner of the address
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.userUid;
+      
+      // Allow create if user is creating their own address
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userUid;
+      
+      // Allow update if user is the owner of the address
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.userUid;
+      
+      // Allow delete if user is the owner of the address
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.userUid;
+    }
+    
+    // Auctions collection - for auction listings
+    match /auctions/{auctionId} {
+      // Allow read if user is authenticated
+      allow read: if request.auth != null;
+      
+      // Allow create if user is authenticated and is the seller
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.sellerUid;
+      
+      // Allow update if user is the seller or any authenticated user (for bidding)
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.sellerUid ||
+        // Allow bidding (updating currentBid and bids array)
+        (request.resource.data.keys().hasAll(['currentBid', 'bids', 'updatedAt']) &&
+         request.resource.data.currentBid > resource.data.currentBid) ||
+        // Allow status updates (for ending auctions)
+        (request.resource.data.keys().hasAll(['status', 'updatedAt']) &&
+         request.resource.data.status == 'ended')
+      );
+      
+      // Allow delete if user is the seller
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.sellerUid;
+    }
+  }
+}

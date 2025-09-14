@@ -160,18 +160,84 @@ class AuctionFirestoreService {
     }
   }
 
-  // End auction
+  // End auction and create order for highest bidder
   Future<void> endAuction(String auctionId) async {
     try {
-      await _firebaseService.firestore
+      final auctionRef = _firebaseService.firestore
           .collection('auctions')
-          .doc(auctionId)
-          .update({
-            'status': 'ended',
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+          .doc(auctionId);
+
+      await _firebaseService.firestore.runTransaction((transaction) async {
+        final auctionDoc = await transaction.get(auctionRef);
+
+        if (!auctionDoc.exists) {
+          throw Exception('Auction not found');
+        }
+
+        final auction = AuctionModel.fromFirestore(auctionDoc);
+
+        if (auction.status != 'active') {
+          throw Exception('Auction is not active');
+        }
+
+        // Update auction status
+        transaction.update(auctionRef, {
+          'status': 'ended',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        // Create order for highest bidder if there are bids
+        if (auction.bids.isNotEmpty) {
+          final highestBid = auction.highestBid!;
+          await _createOrderFromAuction(auction, highestBid);
+        }
+      });
     } catch (e) {
       throw Exception('Failed to end auction: $e');
+    }
+  }
+
+  // Create order from auction for highest bidder
+  Future<void> _createOrderFromAuction(
+    AuctionModel auction,
+    BidModel highestBid,
+  ) async {
+    try {
+      // Create order document
+      final orderData = {
+        'customerId': highestBid.bidderUid,
+        'customerName': highestBid.bidderName,
+        'sellerUid': auction.sellerUid,
+        'sellerName': auction.sellerName,
+        'items': [
+          {
+            'itemId': auction.id,
+            'itemName': auction.title,
+            'itemImageUrl': auction.imageUrl,
+            'itemPrice': highestBid.amount,
+            'quantity': 1,
+            'totalPrice': highestBid.amount,
+          },
+        ],
+        'subtotal': highestBid.amount,
+        'tax': 0.0, // No tax for auction items
+        'total': highestBid.amount,
+        'status': 'pending',
+        'paymentStatus': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'auctionId': auction.id,
+        'isAuctionOrder': true,
+      };
+
+      await _firebaseService.firestore.collection('orders').add(orderData);
+
+      print(
+        '✅ Order created for auction ${auction.id} - Winner: ${highestBid.bidderName}',
+      );
+    } catch (e) {
+      print('❌ Error creating order from auction: $e');
+      throw Exception('Failed to create order from auction: $e');
     }
   }
 
@@ -180,6 +246,24 @@ class AuctionFirestoreService {
     return _firebaseService.firestore
         .collection('auctions')
         .where('sellerUid', isEqualTo: sellerUid)
+        .snapshots();
+  }
+
+  // Get user's active auctions
+  Stream<QuerySnapshot> getUserActiveAuctionsStream(String sellerUid) {
+    return _firebaseService.firestore
+        .collection('auctions')
+        .where('sellerUid', isEqualTo: sellerUid)
+        .where('status', isEqualTo: 'active')
+        .snapshots();
+  }
+
+  // Get user's closed auctions
+  Stream<QuerySnapshot> getUserClosedAuctionsStream(String sellerUid) {
+    return _firebaseService.firestore
+        .collection('auctions')
+        .where('sellerUid', isEqualTo: sellerUid)
+        .where('status', isEqualTo: 'ended')
         .snapshots();
   }
 
@@ -200,6 +284,46 @@ class AuctionFirestoreService {
           .delete();
     } catch (e) {
       throw Exception('Failed to delete auction: $e');
+    }
+  }
+
+  // Check and end expired auctions
+  Future<void> checkAndEndExpiredAuctions() async {
+    try {
+      final now = DateTime.now();
+      final expiredAuctions = await _firebaseService.firestore
+          .collection('auctions')
+          .where('status', isEqualTo: 'active')
+          .where('endTime', isLessThan: Timestamp.fromDate(now))
+          .get();
+
+      for (final doc in expiredAuctions.docs) {
+        try {
+          await endAuction(doc.id);
+          print('✅ Ended expired auction: ${doc.id}');
+        } catch (e) {
+          print('❌ Error ending expired auction ${doc.id}: $e');
+        }
+      }
+    } catch (e) {
+      print('❌ Error checking expired auctions: $e');
+    }
+  }
+
+  // Get auctions that need to be ended (for background processing)
+  Future<List<String>> getExpiredAuctionIds() async {
+    try {
+      final now = DateTime.now();
+      final expiredAuctions = await _firebaseService.firestore
+          .collection('auctions')
+          .where('status', isEqualTo: 'active')
+          .where('endTime', isLessThan: Timestamp.fromDate(now))
+          .get();
+
+      return expiredAuctions.docs.map((doc) => doc.id).toList();
+    } catch (e) {
+      print('❌ Error getting expired auction IDs: $e');
+      return [];
     }
   }
 }
