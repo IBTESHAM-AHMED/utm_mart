@@ -368,6 +368,10 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                     onPressed: _isLoading ? null : _placeBid,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: TColors.primary,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: TSizes.md,
+                        horizontal: TSizes.lg,
+                      ),
                     ),
                     child: _isLoading
                         ? const SizedBox(
@@ -381,7 +385,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                             ),
                           )
                         : const Text(
-                            'Place Bid',
+                            'Bid',
                             style: TextStyle(color: Colors.white),
                           ),
                   ),
@@ -400,7 +404,10 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                   onPressed: _isLoading ? null : _buyNow,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(vertical: TSizes.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: TSizes.md,
+                      horizontal: TSizes.lg,
+                    ),
                   ),
                   child: _isLoading
                       ? const SizedBox(

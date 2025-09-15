@@ -808,15 +808,27 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: TSizes.spaceBtwItems),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    THelperFunctions.navigateToScreen(
-                      context,
-                      const CreateAuctionView(),
-                    );
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Create Auction'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: TSizes.lg),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        THelperFunctions.navigateToScreen(
+                          context,
+                          const CreateAuctionView(),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Start an Auction'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: TSizes.md,
+                          horizontal: TSizes.lg,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
