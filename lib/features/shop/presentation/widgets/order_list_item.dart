@@ -26,6 +26,7 @@ class _OrderListItemState extends State<OrderListItem> {
     final String orderId = widget.order.id;
     final String status = data['status'] ?? 'pending';
     final String paymentStatus = data['paymentStatus'] ?? 'pending';
+    final bool isAuctionOrder = data['isAuctionOrder'] == true;
     final double total = (data['total'] ?? 0.0).toDouble();
     final double subtotal = (data['subtotal'] ?? 0.0).toDouble();
     final double tax = (data['tax'] ?? 0.0).toDouble();
@@ -56,13 +57,62 @@ class _OrderListItemState extends State<OrderListItem> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Order #${orderId.substring(0, 12)}',
-                        style: Theme.of(context).textTheme.titleLarge?.apply(
-                          fontWeightDelta: 2,
-                          color: Colors.blue,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Order #${orderId.substring(0, 12)}',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.apply(fontWeightDelta: 2, color: Colors.blue),
+                          ),
+                          const SizedBox(height: TSizes.xs / 2),
+                          // Order Type Badge - Compact
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: TSizes.xs,
+                              vertical: TSizes.xs / 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isAuctionOrder
+                                  ? Colors.purple.withOpacity(0.1)
+                                  : Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(TSizes.xs),
+                              border: Border.all(
+                                color: isAuctionOrder
+                                    ? Colors.purple
+                                    : Colors.green,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isAuctionOrder
+                                      ? Iconsax.crown
+                                      : Iconsax.shopping_cart,
+                                  size: 10,
+                                  color: isAuctionOrder
+                                      ? Colors.purple
+                                      : Colors.green,
+                                ),
+                                const SizedBox(width: TSizes.xs / 4),
+                                Text(
+                                  isAuctionOrder ? 'AUCTION' : 'BUY',
+                                  style: TextStyle(
+                                    color: isAuctionOrder
+                                        ? Colors.purple
+                                        : Colors.green,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: TSizes.xs / 2),
                       Text(
                         '$formattedDate at $formattedTime',
                         style: Theme.of(
@@ -510,15 +560,11 @@ class _OrderListItemState extends State<OrderListItem> {
           'color': Colors.purple,
         };
       case 'received':
-        return {
-          'text': 'Received',
-          'icon': Iconsax.tick_circle,
-          'color': Colors.green,
-        };
+        return {'text': 'Received', 'icon': Iconsax.box, 'color': Colors.teal};
       case 'closed':
         return {
-          'text': 'Closed',
-          'icon': Iconsax.tick_circle,
+          'text': 'Completed',
+          'icon': Iconsax.verify,
           'color': Colors.green,
         };
       case 'cancelled':

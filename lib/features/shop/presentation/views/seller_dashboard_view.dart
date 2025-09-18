@@ -13,12 +13,24 @@ import 'package:utmmart/features/auction/presentation/views/auction_detail_view.
 import 'package:utmmart/features/auction/presentation/views/create_auction_view.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:intl/intl.dart';
+import 'package:iconsax/iconsax.dart';
 
 class SellerDashboardView extends StatefulWidget {
   const SellerDashboardView({super.key});
 
   @override
   State<SellerDashboardView> createState() => _SellerDashboardViewState();
+}
+
+enum SellerOrderCategory { all, buy, auction }
+
+enum SellerOrderStatusFilter {
+  all,
+  pending,
+  approved,
+  shipped,
+  received,
+  closed,
 }
 
 class _SellerDashboardViewState extends State<SellerDashboardView>
@@ -29,6 +41,10 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
   late TabController _tabController;
   String? _currentUserUid;
   Timer? _timer;
+
+  // Filter states for Track Order tab
+  SellerOrderCategory _selectedOrderCategory = SellerOrderCategory.all;
+  SellerOrderStatusFilter _selectedOrderStatus = SellerOrderStatusFilter.all;
 
   @override
   void initState() {
@@ -289,6 +305,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     Map<String, dynamic> data,
   ) {
     final String status = data['status'] ?? 'pending';
+    final bool isAuctionOrder = data['isAuctionOrder'] == true;
     final String customerName = data['customerName'] ?? 'Unknown Customer';
     final String customerEmail = data['customerEmail'] ?? 'No email';
     final String customerPhone = data['customerPhone'] ?? 'No phone';
@@ -317,13 +334,62 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Order #${orderId.substring(0, 12)}',
-                        style: Theme.of(context).textTheme.titleLarge?.apply(
-                          fontWeightDelta: 2,
-                          color: Colors.blue,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Order #${orderId.substring(0, 12)}',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.apply(fontWeightDelta: 2, color: Colors.blue),
+                          ),
+                          const SizedBox(height: TSizes.xs / 2),
+                          // Order Type Badge - Compact
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: TSizes.xs,
+                              vertical: TSizes.xs / 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isAuctionOrder
+                                  ? Colors.purple.withOpacity(0.1)
+                                  : Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(TSizes.xs),
+                              border: Border.all(
+                                color: isAuctionOrder
+                                    ? Colors.purple
+                                    : Colors.green,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isAuctionOrder
+                                      ? Icons.gavel
+                                      : Icons.shopping_cart,
+                                  size: 10,
+                                  color: isAuctionOrder
+                                      ? Colors.purple
+                                      : Colors.green,
+                                ),
+                                const SizedBox(width: TSizes.xs / 4),
+                                Text(
+                                  isAuctionOrder ? 'AUCTION' : 'BUY',
+                                  style: TextStyle(
+                                    color: isAuctionOrder
+                                        ? Colors.purple
+                                        : Colors.green,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: TSizes.xs / 2),
                       Text(
                         '$formattedDate at $formattedTime',
                         style: Theme.of(
@@ -636,17 +702,6 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
         ],
         if (currentStatus == 'shipped') ...[
           Expanded(
-            child: ElevatedButton(
-              onPressed: () => _updateOrderStatus(orderId, 'closed'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Close Order'),
-            ),
-          ),
-          const SizedBox(width: TSizes.sm),
-          Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: TSizes.md,
@@ -669,8 +724,87 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
             ),
           ),
         ],
+        if (currentStatus == 'received') ...[
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _showPaymentConfirmationDialog(orderId),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Confirm Payment & Close'),
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  // Show payment confirmation dialog
+  void _showPaymentConfirmationDialog(String orderId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Payment'),
+        content: const Text(
+          'Have you received the cash payment from the customer? This will mark the order as completed and update the payment status to paid.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _confirmPaymentAndCloseOrder(orderId);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirm Payment'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Confirm payment and close order
+  Future<void> _confirmPaymentAndCloseOrder(String orderId) async {
+    try {
+      print('🔄 Confirming payment and closing order $orderId');
+
+      await _firebaseService.firestore
+          .collection('orders')
+          .doc(orderId)
+          .update({
+            'status': 'closed',
+            'paymentStatus': 'paid',
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+
+      print('✅ Order closed and payment confirmed successfully');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order completed and payment confirmed!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error confirming payment and closing order: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error confirming payment: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // Update order status
@@ -1326,112 +1460,468 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                   ),
                 ),
                 // Track Order Tab
-                Padding(
-                  padding: const EdgeInsets.all(TSizes.defaultSpace),
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: _firebaseService.firestore
-                        .collection('orders')
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.shopping_bag_outlined,
-                                size: 64,
-                                color: Colors.grey,
+                Column(
+                  children: [
+                    // Filter Header - Compact Design
+                    Container(
+                      margin: const EdgeInsets.all(TSizes.sm),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: TSizes.md,
+                        vertical: TSizes.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(TSizes.md),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.08),
+                            spreadRadius: 0,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Colors.grey.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          // Order Type Filter - Compact
+                          Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  _buildSellerFilterChip(
+                                    'All',
+                                    _selectedOrderCategory ==
+                                        SellerOrderCategory.all,
+                                    Iconsax.bag,
+                                    () => setState(
+                                      () => _selectedOrderCategory =
+                                          SellerOrderCategory.all,
+                                    ),
+                                  ),
+                                  const SizedBox(width: TSizes.xs),
+                                  _buildSellerFilterChip(
+                                    'Sales',
+                                    _selectedOrderCategory ==
+                                        SellerOrderCategory.buy,
+                                    Iconsax.shopping_cart,
+                                    () => setState(
+                                      () => _selectedOrderCategory =
+                                          SellerOrderCategory.buy,
+                                    ),
+                                  ),
+                                  const SizedBox(width: TSizes.xs),
+                                  _buildSellerFilterChip(
+                                    'Auctions',
+                                    _selectedOrderCategory ==
+                                        SellerOrderCategory.auction,
+                                    Iconsax.crown,
+                                    () => setState(
+                                      () => _selectedOrderCategory =
+                                          SellerOrderCategory.auction,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: TSizes.spaceBtwItems),
-                              Text(
-                                'No pending orders',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey,
+                            ),
+                          ),
+                          // Status Filter Button - Compact
+                          Container(
+                            margin: const EdgeInsets.only(left: TSizes.xs),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _showSellerFilterBottomSheet,
+                                borderRadius: BorderRadius.circular(TSizes.sm),
+                                child: Container(
+                                  padding: const EdgeInsets.all(TSizes.xs),
+                                  child: Stack(
+                                    children: [
+                                      Icon(
+                                        Iconsax.filter,
+                                        size: 20,
+                                        color:
+                                            _selectedOrderStatus !=
+                                                SellerOrderStatusFilter.all
+                                            ? Theme.of(context).primaryColor
+                                            : Colors.grey[600],
+                                      ),
+                                      if (_selectedOrderStatus !=
+                                          SellerOrderStatusFilter.all)
+                                        Positioned(
+                                          right: 0,
+                                          top: 0,
+                                          child: Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(
+                                                context,
+                                              ).primaryColor,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              SizedBox(height: TSizes.spaceBtwItems / 2),
-                              Text(
-                                'Orders will appear here when customers place them',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
+                            ),
                           ),
-                        );
-                      }
+                        ],
+                      ),
+                    ),
 
-                      // Filter orders where current user is the seller and status is not closed/cancelled
-                      final currentUserId = _firebaseService.currentUser?.uid;
-                      final pendingOrders = snapshot.data!.docs.where((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final status = data['status'] ?? 'pending';
+                    // Orders List
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(TSizes.defaultSpace),
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: _firebaseService.firestore
+                              .collection('orders')
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
 
-                        // Check if status is not closed or cancelled
-                        if (status == 'closed' || status == 'cancelled') {
-                          return false;
-                        }
+                            if (snapshot.hasError) {
+                              return Center(
+                                child: Text('Error: ${snapshot.error}'),
+                              );
+                            }
 
-                        // Check if current user is the seller in any of the items
-                        final items = data['items'] as List<dynamic>? ?? [];
-                        return items.any((item) {
-                          final itemData = item as Map<String, dynamic>;
-                          return itemData['sellerUid'] == currentUserId;
-                        });
-                      }).toList();
+                            if (!snapshot.hasData ||
+                                snapshot.data!.docs.isEmpty) {
+                              return _buildSellerEmptyState();
+                            }
 
-                      if (pendingOrders.isEmpty) {
-                        return const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                size: 64,
-                                color: Colors.green,
-                              ),
-                              SizedBox(height: TSizes.spaceBtwItems),
-                              Text(
-                                'All orders processed',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              SizedBox(height: TSizes.spaceBtwItems / 2),
-                              Text(
-                                'No pending orders to process',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
+                            // Filter orders for seller
+                            final filteredOrders = _filterSellerOrders(
+                              snapshot.data!.docs,
+                            );
 
-                      return ListView.builder(
-                        itemCount: pendingOrders.length,
-                        itemBuilder: (context, index) {
-                          final doc = pendingOrders[index];
-                          final data = doc.data() as Map<String, dynamic>;
-                          return _buildPendingOrderCard(context, doc.id, data);
-                        },
-                      );
-                    },
-                  ),
+                            if (filteredOrders.isEmpty) {
+                              return _buildSellerEmptyState(isFiltered: true);
+                            }
+
+                            return ListView.builder(
+                              itemCount: filteredOrders.length,
+                              itemBuilder: (context, index) {
+                                final doc = filteredOrders[index];
+                                final data = doc.data() as Map<String, dynamic>;
+                                return _buildPendingOrderCard(
+                                  context,
+                                  doc.id,
+                                  data,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 // Auction Items Tab
                 _buildAuctionItemsTab(),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // Seller dashboard filter methods
+  Widget _buildSellerFilterChip(
+    String label,
+    bool isSelected,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(TSizes.lg),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: TSizes.sm,
+            vertical: TSizes.xs,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).primaryColor.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(TSizes.lg),
+            border: Border.all(
+              color: isSelected
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey.withOpacity(0.3),
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected
+                    ? Theme.of(context).primaryColor
+                    : Colors.grey[600],
+              ),
+              const SizedBox(width: TSizes.xs / 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey[700],
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSellerFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(TSizes.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Filter by Status',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                if (_selectedOrderStatus != SellerOrderStatusFilter.all)
+                  TextButton(
+                    onPressed: () {
+                      setState(
+                        () =>
+                            _selectedOrderStatus = SellerOrderStatusFilter.all,
+                      );
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Clear'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: TSizes.lg),
+            Wrap(
+              spacing: TSizes.sm,
+              runSpacing: TSizes.sm,
+              children: [
+                _buildSellerStatusChip(
+                  'All',
+                  SellerOrderStatusFilter.all,
+                  Iconsax.menu,
+                ),
+                _buildSellerStatusChip(
+                  'Pending',
+                  SellerOrderStatusFilter.pending,
+                  Iconsax.clock,
+                ),
+                _buildSellerStatusChip(
+                  'Approved',
+                  SellerOrderStatusFilter.approved,
+                  Iconsax.tick_circle,
+                ),
+                _buildSellerStatusChip(
+                  'Shipped',
+                  SellerOrderStatusFilter.shipped,
+                  Iconsax.ship,
+                ),
+                _buildSellerStatusChip(
+                  'Received',
+                  SellerOrderStatusFilter.received,
+                  Iconsax.box,
+                ),
+                _buildSellerStatusChip(
+                  'Completed',
+                  SellerOrderStatusFilter.closed,
+                  Iconsax.verify,
+                ),
+              ],
+            ),
+            const SizedBox(height: TSizes.lg),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSellerStatusChip(
+    String label,
+    SellerOrderStatusFilter status,
+    IconData icon,
+  ) {
+    final isSelected = _selectedOrderStatus == status;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedOrderStatus = status);
+        Navigator.pop(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: TSizes.md,
+          vertical: TSizes.sm,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
+          borderRadius: BorderRadius.circular(TSizes.lg),
+          border: Border.all(
+            color: isSelected
+                ? Theme.of(context).primaryColor
+                : Colors.grey[300]!,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey[600],
+            ),
+            const SizedBox(width: TSizes.xs),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[600],
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<QueryDocumentSnapshot> _filterSellerOrders(
+    List<QueryDocumentSnapshot> orders,
+  ) {
+    final currentUserId = _firebaseService.currentUser?.uid;
+
+    var filteredOrders = orders.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final status = data['status'] ?? 'pending';
+      final isAuctionOrder = data['isAuctionOrder'] == true;
+
+      // Check if current user is the seller in any of the items
+      final items = data['items'] as List<dynamic>? ?? [];
+      final isSellerOrder = items.any((item) {
+        final itemData = item as Map<String, dynamic>;
+        return itemData['sellerUid'] == currentUserId;
+      });
+
+      if (!isSellerOrder) return false;
+
+      // Filter by order category (buy/auction)
+      if (_selectedOrderCategory != SellerOrderCategory.all) {
+        if (_selectedOrderCategory == SellerOrderCategory.auction &&
+            !isAuctionOrder) {
+          return false;
+        }
+        if (_selectedOrderCategory == SellerOrderCategory.buy &&
+            isAuctionOrder) {
+          return false;
+        }
+      }
+
+      // Filter by status
+      if (_selectedOrderStatus != SellerOrderStatusFilter.all) {
+        final statusMatch = _selectedOrderStatus.toString().split('.').last;
+        if (status != statusMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    // Sort orders by creation date (newest first), with pending orders prioritized
+    filteredOrders.sort((a, b) {
+      final aData = a.data() as Map<String, dynamic>;
+      final bData = b.data() as Map<String, dynamic>;
+      final aStatus = aData['status'] ?? 'pending';
+      final bStatus = bData['status'] ?? 'pending';
+      final aCreatedAt = aData['createdAt'] as Timestamp;
+      final bCreatedAt = bData['createdAt'] as Timestamp;
+
+      // Prioritize pending orders first
+      if (aStatus == 'pending' && bStatus != 'pending') return -1;
+      if (bStatus == 'pending' && aStatus != 'pending') return 1;
+
+      // Then sort by date (newest first)
+      return bCreatedAt.compareTo(aCreatedAt);
+    });
+
+    return filteredOrders;
+  }
+
+  Widget _buildSellerEmptyState({bool isFiltered = false}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isFiltered ? Iconsax.filter_search : Icons.shopping_bag_outlined,
+            size: 64,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: TSizes.spaceBtwItems),
+          Text(
+            isFiltered ? 'No orders match your filters' : 'No orders found',
+            style: const TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+          const SizedBox(height: TSizes.spaceBtwItems / 2),
+          Text(
+            isFiltered
+                ? 'Try adjusting your filter criteria'
+                : 'Orders will appear here when customers place them',
+            style: const TextStyle(color: Colors.grey),
+          ),
+          if (isFiltered) ...[
+            const SizedBox(height: TSizes.spaceBtwItems),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _selectedOrderCategory = SellerOrderCategory.all;
+                  _selectedOrderStatus = SellerOrderStatusFilter.all;
+                });
+              },
+              icon: const Icon(Iconsax.refresh, size: 16),
+              label: const Text('Clear Filters'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
         ],
       ),
     );
