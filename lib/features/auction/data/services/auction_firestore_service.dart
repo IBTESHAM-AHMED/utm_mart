@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:utmmart/features/auction/data/models/auction_model.dart';
+import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 
 class AuctionFirestoreService {
   final FirebaseService _firebaseService = sl<FirebaseService>();
+  final NotificationService _notificationService = NotificationService();
 
   // Get all active auctions
   Stream<QuerySnapshot> getActiveAuctionsStream() {
@@ -79,6 +81,8 @@ class AuctionFirestoreService {
           .collection('auctions')
           .doc(auctionId);
 
+      AuctionModel? auction;
+
       await _firebaseService.firestore.runTransaction((transaction) async {
         final auctionDoc = await transaction.get(auctionRef);
 
@@ -86,18 +90,18 @@ class AuctionFirestoreService {
           throw Exception('Auction not found');
         }
 
-        final auction = AuctionModel.fromFirestore(auctionDoc);
+        auction = AuctionModel.fromFirestore(auctionDoc);
 
-        if (auction.hasEnded) {
+        if (auction!.hasEnded) {
           throw Exception('Auction has ended');
         }
 
-        if (bid.amount <= auction.currentBid) {
+        if (bid.amount <= auction!.currentBid) {
           throw Exception('Bid must be higher than current bid');
         }
 
-        final updatedBids = [...auction.bids, bid];
-        final updatedAuction = auction.copyWith(
+        final updatedBids = [...auction!.bids, bid];
+        final updatedAuction = auction!.copyWith(
           currentBid: bid.amount,
           bids: updatedBids,
           updatedAt: DateTime.now(),
@@ -105,6 +109,21 @@ class AuctionFirestoreService {
 
         transaction.update(auctionRef, updatedAuction.toFirestore());
       });
+
+      // Notify previous highest bidder if they were outbid
+      if (auction != null && auction!.bids.isNotEmpty) {
+        final previousHighestBid = auction!.bids.reduce(
+          (a, b) => a.amount > b.amount ? a : b,
+        );
+        if (previousHighestBid.bidderUid != bid.bidderUid) {
+          await _notificationService.createAuctionOutbidNotification(
+            auctionId: auctionId,
+            bidderId: previousHighestBid.bidderUid,
+            auctionTitle: auction!.title,
+            newHighestBid: bid.amount,
+          );
+        }
+      }
     } catch (e) {
       throw Exception('Failed to place bid: $e');
     }
@@ -190,6 +209,26 @@ class AuctionFirestoreService {
         if (auction.bids.isNotEmpty) {
           final highestBid = auction.highestBid!;
           await _createOrderFromAuction(auction, highestBid);
+
+          // Notify winner
+          await _notificationService.createAuctionWonNotification(
+            auctionId: auctionId,
+            winnerId: highestBid.bidderUid,
+            auctionTitle: auction.title,
+            winningBid: highestBid.amount,
+          );
+        }
+
+        // Notify all bidders that auction ended
+        for (final bid in auction.bids) {
+          if (auction.bids.isNotEmpty &&
+              bid.bidderUid != auction.highestBid?.bidderUid) {
+            await _notificationService.createAuctionEndedNotification(
+              auctionId: auctionId,
+              bidderId: bid.bidderUid,
+              auctionTitle: auction.title,
+            );
+          }
         }
       });
     } catch (e) {

@@ -3,10 +3,12 @@ import 'package:utmmart/features/auth/data/models/firestore_user_model.dart';
 import 'package:utmmart/features/shop/data/models/cart_item_model.dart';
 import 'package:utmmart/features/shop/data/services/store_firestore_service.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
+import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 
 class OrderService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final StoreFirestoreService _storeService = sl<StoreFirestoreService>();
+  final NotificationService _notificationService = NotificationService();
   final String _ordersCollection = 'orders';
 
   Future<bool> createOrder({
@@ -50,7 +52,18 @@ class OrderService {
       };
 
       // Add order to Firestore
-      await _firestore.collection(_ordersCollection).add(orderData);
+      final orderDocRef = await _firestore
+          .collection(_ordersCollection)
+          .add(orderData);
+      final orderId = orderDocRef.id;
+      final orderNumber = orderId.substring(0, 8);
+
+      // Create notification for customer about order waiting for approval
+      await _notificationService.createOrderWaitingApprovalNotification(
+        orderId: orderId,
+        customerId: customer.uid,
+        orderNumber: orderNumber,
+      );
 
       // Update stock for each item
       for (final cartItem in cartItems) {

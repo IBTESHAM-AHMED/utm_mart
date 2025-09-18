@@ -14,6 +14,7 @@ import 'package:utmmart/features/auction/presentation/views/create_auction_view.
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:intl/intl.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 
 class SellerDashboardView extends StatefulWidget {
   const SellerDashboardView({super.key});
@@ -37,6 +38,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     with SingleTickerProviderStateMixin {
   final FirebaseService _firebaseService = sl<FirebaseService>();
   final AuctionFirestoreService _auctionService = sl<AuctionFirestoreService>();
+  final NotificationService _notificationService = NotificationService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   late TabController _tabController;
   String? _currentUserUid;
@@ -812,8 +814,31 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     try {
       print('🔄 Updating order $orderId to status: $newStatus');
 
+      // Get order details first
+      final orderDoc = await _firebaseService.firestore
+          .collection('orders')
+          .doc(orderId)
+          .get();
+      if (!orderDoc.exists) {
+        throw Exception('Order not found');
+      }
+
+      final orderData = orderDoc.data()!;
+      final customerId = orderData['customerId'] as String;
+      final orderNumber =
+          orderData['orderNumber'] as String? ?? orderId.substring(0, 8);
+
+      // Update order status
       await _firebaseService.firestore.collection('orders').doc(orderId).update(
         {'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()},
+      );
+
+      // Create notification for customer
+      await _notificationService.createOrderStatusNotification(
+        orderId: orderId,
+        customerId: customerId,
+        newStatus: newStatus,
+        orderNumber: orderNumber,
       );
 
       print('✅ Order status updated successfully');

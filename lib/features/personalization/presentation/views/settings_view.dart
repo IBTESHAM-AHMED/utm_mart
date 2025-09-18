@@ -16,6 +16,8 @@ import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/features/auth/domain/usecases/get_cached_user_usecase.dart';
 import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:utmmart/features/notifications/presentation/views/notifications_view.dart';
+import 'package:utmmart/features/notifications/presentation/widgets/notification_badge.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -74,6 +76,17 @@ class SettingsView extends StatelessWidget {
         title: "My Orders",
         subtitle: "In-Progress And Completed Orders",
         leading: Iconsax.bag,
+      ),
+      SettingsMenuTileModel(
+        onTap: () {
+          THelperFunctions.navigateToScreen(context, const NotificationsView());
+        },
+        title: "Notifications",
+        subtitle: "Order updates, auction alerts, and more",
+        leading: Iconsax.notification,
+        trailing: const NotificationBadge(
+          child: Icon(Iconsax.arrow_right_3, size: 16),
+        ),
       ),
     ];
     return SafeArea(
