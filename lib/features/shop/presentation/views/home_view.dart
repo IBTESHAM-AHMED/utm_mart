@@ -341,7 +341,7 @@ class _HomeViewState extends State<HomeView> {
                       children: [
                         Expanded(
                           child: Text(
-                            '\$${item.itemPrice.toStringAsFixed(2)}',
+                            'RM${item.itemPrice.toStringAsFixed(2)}',
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
                                   color: TColors.primary,

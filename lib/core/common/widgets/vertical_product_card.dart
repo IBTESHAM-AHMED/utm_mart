@@ -118,7 +118,7 @@ class VerticalProductCard extends StatelessWidget {
                       Expanded(
                         child: ProductPriceText(
                           productPriceTextModel: ProductPriceTextModel(
-                            currencySymbol: "\$",
+                            currencySymbol: "RM",
                             price: product.price.toString(),
                             maxLines: 1,
                             smallSize: true,

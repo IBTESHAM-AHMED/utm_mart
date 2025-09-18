@@ -19,73 +19,64 @@ class ProductMetadata extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = THelperFunctions.isDarkMode(context);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(
-        children: [
-          const SaleTag(
-            discountPercentage: 44,
-          ),
-          const SizedBox(
-            width: TSizes.spaceBtwItems,
-          ),
-          Text(
-            " \$250",
-            style: Theme.of(context).textTheme.titleSmall!.apply(
-                  decoration: TextDecoration.lineThrough,
-                ),
-          ),
-          const SizedBox(
-            width: TSizes.spaceBtwItems,
-          ),
-          ProductPriceText(
-              productPriceTextModel: ProductPriceTextModel(
-            price: "175",
-            smallSize: false,
-          ))
-        ],
-      ),
-      const SizedBox(
-        height: TSizes.spaceBtwItems / 1.5,
-      ),
-      ProductTitleText(
-          productTitleTextModel: ProductTitleTextModel(
-        title: "Green Nike Sports Jacket",
-      )),
-      const SizedBox(
-        height: TSizes.spaceBtwItems / 1.5,
-      ),
-      Row(
-        children: [
-          ProductTitleText(
-              productTitleTextModel: ProductTitleTextModel(
-            title: "Status",
-          )),
-          const SizedBox(
-            width: TSizes.spaceBtwItems,
-          ),
-          Text("In Stock", style: Theme.of(context).textTheme.titleMedium),
-        ],
-      ),
-      const SizedBox(
-        height: TSizes.spaceBtwItems / 1.5,
-      ),
-      Row(
-        children: [
-          RoundedImage(
-            roundedImageModel: RoundedImageModel(
-              image: TImages.nikeLogo,
-              width: 32,
-              height: 32,
-              backgroundColor: dark ? TColors.black : TColors.white,
-              overlayColor: dark ? TColors.white : TColors.black,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const SaleTag(discountPercentage: 44),
+            const SizedBox(width: TSizes.spaceBtwItems),
+            Text(
+              " RM250",
+              style: Theme.of(context).textTheme.titleSmall!.apply(
+                decoration: TextDecoration.lineThrough,
+              ),
             ),
+            const SizedBox(width: TSizes.spaceBtwItems),
+            ProductPriceText(
+              productPriceTextModel: ProductPriceTextModel(
+                price: "175",
+                smallSize: false,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: TSizes.spaceBtwItems / 1.5),
+        ProductTitleText(
+          productTitleTextModel: ProductTitleTextModel(
+            title: "Green Nike Sports Jacket",
           ),
-          const BrandTitleWithVerification(
-            brandTitleWithVerificationModel:
-                BrandTitleWithVerificationModel(brandName: "Nike"),
-          ),
-        ],
-      ),
-    ]);
+        ),
+        const SizedBox(height: TSizes.spaceBtwItems / 1.5),
+        Row(
+          children: [
+            ProductTitleText(
+              productTitleTextModel: ProductTitleTextModel(title: "Status"),
+            ),
+            const SizedBox(width: TSizes.spaceBtwItems),
+            Text("In Stock", style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
+        const SizedBox(height: TSizes.spaceBtwItems / 1.5),
+        Row(
+          children: [
+            RoundedImage(
+              roundedImageModel: RoundedImageModel(
+                image: TImages.nikeLogo,
+                width: 32,
+                height: 32,
+                backgroundColor: dark ? TColors.black : TColors.white,
+                overlayColor: dark ? TColors.white : TColors.black,
+              ),
+            ),
+            const BrandTitleWithVerification(
+              brandTitleWithVerificationModel: BrandTitleWithVerificationModel(
+                brandName: "Nike",
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }

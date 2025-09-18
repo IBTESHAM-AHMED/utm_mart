@@ -114,7 +114,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
           Expanded(
             child: _buildStatCard(
               'Revenue',
-              '\$0',
+              'RM0',
               Icons.attach_money,
               TColors.warning,
             ),
@@ -199,7 +199,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
         ),
         title: Text(product.name),
         subtitle: Text(
-          '${product.category} • \$${product.price} • Stock: ${product.stockQuantity}',
+          '${product.category} • RM${product.price} • Stock: ${product.stockQuantity}',
         ),
         trailing: PopupMenuButton(
           itemBuilder: (context) => [
@@ -272,7 +272,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
       child: ListTile(
         title: Text('Order #${order.id?.substring(0, 8)}'),
         subtitle: Text(
-          '${order.customerName} • \$${order.total} • ${order.statusDisplayText}',
+          '${order.customerName} • RM${order.total} • ${order.statusDisplayText}',
         ),
         trailing: Chip(
           label: Text(order.statusDisplayText),
@@ -439,14 +439,14 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
             Text('Customer: ${order.customerName}'),
             Text('Email: ${order.customerEmail}'),
             Text('Phone: ${order.customerPhone}'),
-            Text('Total: \$${order.total}'),
+            Text('Total: RM${order.total}'),
             Text('Status: ${order.statusDisplayText}'),
             Text('Payment: ${order.paymentStatusDisplayText}'),
             const SizedBox(height: TSizes.sm),
             const Text('Items:', style: TextStyle(fontWeight: FontWeight.bold)),
             ...order.items.map(
               (item) => Text(
-                '• ${item.productName} x${item.quantity} - \$${item.total}',
+                '• ${item.productName} x${item.quantity} - RM${item.total}',
               ),
             ),
           ],

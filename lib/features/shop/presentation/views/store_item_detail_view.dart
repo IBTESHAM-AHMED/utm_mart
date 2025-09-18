@@ -356,7 +356,7 @@ class _StoreItemDetailViewState extends State<StoreItemDetailView> {
           children: [
             Text('Total: ', style: Theme.of(context).textTheme.titleMedium),
             Text(
-              '\$${(widget.item.itemPrice * _quantity).toStringAsFixed(2)}',
+              'RM${(widget.item.itemPrice * _quantity).toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: TColors.primary,
                 fontWeight: FontWeight.bold,
@@ -381,7 +381,7 @@ class _StoreItemDetailViewState extends State<StoreItemDetailView> {
             ),
             child: Text(
               widget.item.itemStock > 0
-                  ? 'Add to Cart - \$${(widget.item.itemPrice * _quantity).toStringAsFixed(2)}'
+                  ? 'Add to Cart - RM${(widget.item.itemPrice * _quantity).toStringAsFixed(2)}'
                   : 'Out of Stock',
               style: const TextStyle(
                 color: TColors.white,

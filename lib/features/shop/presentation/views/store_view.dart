@@ -171,7 +171,7 @@ class _StoreViewState extends State<StoreView> {
                   _buildFilterChip('Brand: $_selectedBrand'),
                   const SizedBox(width: 8),
                   _buildFilterChip(
-                    'Price: \$${_minPrice.toInt()}-\$${_maxPrice.toInt()}',
+                    'Price: RM${_minPrice.toInt()}-RM${_maxPrice.toInt()}',
                   ),
                   const SizedBox(width: 8),
                   _buildFilterChip(
@@ -504,8 +504,8 @@ class _StoreViewState extends State<StoreView> {
                       max: 10000,
                       divisions: 100,
                       labels: RangeLabels(
-                        '\$${_minPrice.toInt()}',
-                        '\$${_maxPrice.toInt()}',
+                        'RM${_minPrice.toInt()}',
+                        'RM${_maxPrice.toInt()}',
                       ),
                       onChanged: (RangeValues values) {
                         setDialogState(() {

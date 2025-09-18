@@ -139,7 +139,7 @@ class _SellerOrderItemState extends State<SellerOrderItem> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Total: \$${total.toStringAsFixed(2)}",
+                  "Total: RM${total.toStringAsFixed(2)}",
                   style: Theme.of(context).textTheme.titleMedium?.apply(
                     fontWeightDelta: 1,
                     color: TColors.primary,

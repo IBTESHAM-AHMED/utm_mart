@@ -215,13 +215,13 @@ class _OrderListItemState extends State<OrderListItem> {
                   const SizedBox(height: TSizes.sm),
                   _buildSummaryRow(
                     'Subtotal',
-                    '\$${subtotal.toStringAsFixed(2)}',
+                    'RM${subtotal.toStringAsFixed(2)}',
                   ),
-                  _buildSummaryRow('Tax', '\$${tax.toStringAsFixed(2)}'),
+                  _buildSummaryRow('Tax', 'RM${tax.toStringAsFixed(2)}'),
                   const Divider(),
                   _buildSummaryRow(
                     'Total',
-                    '\$${total.toStringAsFixed(2)}',
+                    'RM${total.toStringAsFixed(2)}',
                     isTotal: true,
                   ),
                 ],
@@ -354,7 +354,7 @@ class _OrderListItemState extends State<OrderListItem> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Qty: $quantity × \$${price.toStringAsFixed(2)}',
+                  'Qty: $quantity × RM${price.toStringAsFixed(2)}',
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
@@ -363,7 +363,7 @@ class _OrderListItemState extends State<OrderListItem> {
 
           // Total Price
           Text(
-            '\$${totalPrice.toStringAsFixed(2)}',
+            'RM${totalPrice.toStringAsFixed(2)}',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,

@@ -518,13 +518,13 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                   const SizedBox(height: TSizes.sm),
                   _buildSummaryRow(
                     'Subtotal',
-                    '\$${subtotal.toStringAsFixed(2)}',
+                    'RM${subtotal.toStringAsFixed(2)}',
                   ),
-                  _buildSummaryRow('Tax', '\$${tax.toStringAsFixed(2)}'),
+                  _buildSummaryRow('Tax', 'RM${tax.toStringAsFixed(2)}'),
                   const Divider(),
                   _buildSummaryRow(
                     'Total',
-                    '\$${total.toStringAsFixed(2)}',
+                    'RM${total.toStringAsFixed(2)}',
                     isTotal: true,
                   ),
                 ],
@@ -618,7 +618,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Qty: $quantity × \$${price.toStringAsFixed(2)}',
+                  'Qty: $quantity × RM${price.toStringAsFixed(2)}',
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
@@ -627,7 +627,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
 
           // Total Price
           Text(
-            '\$${totalPrice.toStringAsFixed(2)}',
+            'RM${totalPrice.toStringAsFixed(2)}',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -1149,7 +1149,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$${auction.currentBid.toStringAsFixed(2)}',
+                        'RM${auction.currentBid.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
@@ -1415,7 +1415,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                                     'Unknown Item',
                               ),
                               subtitle: Text(
-                                'Price: \$${_getPrice(data)}\n'
+                                'Price: RM${_getPrice(data)}\n'
                                 'Stock: ${_getStock(data)}',
                               ),
                               trailing: PopupMenuButton(

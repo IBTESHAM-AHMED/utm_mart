@@ -11,46 +11,24 @@ class BillingAmountSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Subtotal",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            Text(
-              "\$175",
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
+            Text("Subtotal", style: Theme.of(context).textTheme.bodyMedium),
+            Text("RM175", style: Theme.of(context).textTheme.labelLarge),
           ],
         ),
-        const SizedBox(
-          height: TSizes.spaceBtwItems / 2,
-        ),
+        const SizedBox(height: TSizes.spaceBtwItems / 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Shipping Fee",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            Text(
-              "\$25",
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
+            Text("Shipping Fee", style: Theme.of(context).textTheme.bodyMedium),
+            Text("RM25", style: Theme.of(context).textTheme.labelLarge),
           ],
         ),
-        const SizedBox(
-          height: TSizes.spaceBtwItems / 2,
-        ),
+        const SizedBox(height: TSizes.spaceBtwItems / 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Order Total",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            Text(
-              "\$200",
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text("Order Total", style: Theme.of(context).textTheme.bodyMedium),
+            Text("RM200", style: Theme.of(context).textTheme.titleMedium),
           ],
         ),
       ],

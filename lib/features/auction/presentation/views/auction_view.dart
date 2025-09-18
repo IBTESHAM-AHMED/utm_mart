@@ -422,7 +422,7 @@ class _AuctionViewState extends State<AuctionView> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              'Current: \$${auction.currentBid.toStringAsFixed(2)}',
+                              'Current: RM${auction.currentBid.toStringAsFixed(2)}',
                               style: TextStyle(
                                 color: TColors.primary,
                                 fontWeight: FontWeight.bold,
@@ -446,7 +446,7 @@ class _AuctionViewState extends State<AuctionView> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              'Start: \$${auction.startingPrice.toStringAsFixed(2)}',
+                              'Start: RM${auction.startingPrice.toStringAsFixed(2)}',
                               style: TextStyle(
                                 color: Colors.blue,
                                 fontSize: 11,

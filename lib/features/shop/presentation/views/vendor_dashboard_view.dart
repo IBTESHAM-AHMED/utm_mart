@@ -182,7 +182,7 @@ class _VendorDashboardViewState extends State<VendorDashboardView>
           ),
           const SizedBox(width: TSizes.spaceBtwItems),
           Expanded(
-            child: _buildStatCard('Revenue', '\$0', Icons.attach_money, dark),
+            child: _buildStatCard('Revenue', 'RM0', Icons.attach_money, dark),
           ),
           const SizedBox(width: TSizes.spaceBtwItems),
           Expanded(child: _buildStatCard('Rating', '0.0', Icons.star, dark)),

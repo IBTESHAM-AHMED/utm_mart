@@ -184,12 +184,12 @@ class _OrderConfirmationViewState extends State<OrderConfirmationView> {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          _buildSummaryRow('Subtotal', '\$${_subtotal.toStringAsFixed(2)}'),
-          _buildSummaryRow('Tax (8%)', '\$${_tax.toStringAsFixed(2)}'),
+          _buildSummaryRow('Subtotal', 'RM${_subtotal.toStringAsFixed(2)}'),
+          _buildSummaryRow('Tax (8%)', 'RM${_tax.toStringAsFixed(2)}'),
           const Divider(),
           _buildSummaryRow(
             'Total',
-            '\$${_total.toStringAsFixed(2)}',
+            'RM${_total.toStringAsFixed(2)}',
             isTotal: true,
           ),
         ],
@@ -254,7 +254,7 @@ class _OrderConfirmationViewState extends State<OrderConfirmationView> {
                 ],
               )
             : Text(
-                'Confirm Order - \$${_total.toStringAsFixed(2)}',
+                'Confirm Order - RM${_total.toStringAsFixed(2)}',
                 style: const TextStyle(
                   color: TColors.white,
                   fontSize: 16,

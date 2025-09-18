@@ -335,7 +335,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$${auction.currentBid.toStringAsFixed(2)}',
+                        'RM${auction.currentBid.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: TColors.primary,
                           fontWeight: FontWeight.bold,

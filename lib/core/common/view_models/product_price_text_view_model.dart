@@ -9,7 +9,7 @@ class ProductPriceTextModel {
     required this.price,
     this.lineThrough = false,
     this.smallSize = false,
-    this.currencySymbol = "\$",
+    this.currencySymbol = "RM",
     this.maxLines = 1,
   });
 }

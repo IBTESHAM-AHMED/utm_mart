@@ -28,72 +28,65 @@ class CheckoutView extends StatelessWidget {
         child: ElevatedButton(
           onPressed: () {
             THelperFunctions.navigateToScreen(
-                context,
-                SuccessView(
-                  successModel: SuccessModel(
-                    onPressed: () {
-                      THelperFunctions.navigateReplacementToScreen(
-                          context, const NavigationMenu());
-                    },
-                    image: TImages.successfulPaymentIcon,
-                    buttonText: "Done",
-                    subTitle: "You Item Will Be Shipped Soon!",
-                    title: "Payment Successful",
-                  ),
-                ));
+              context,
+              SuccessView(
+                successModel: SuccessModel(
+                  onPressed: () {
+                    THelperFunctions.navigateReplacementToScreen(
+                      context,
+                      const NavigationMenu(),
+                    );
+                  },
+                  image: TImages.successfulPaymentIcon,
+                  buttonText: "Done",
+                  subTitle: "You Item Will Be Shipped Soon!",
+                  title: "Payment Successful",
+                ),
+              ),
+            );
           },
-          child: const Text("Checkout \$175"),
+          child: const Text("Checkout RM175"),
         ),
       ),
       appBar: CustomAppBar(
-          appBarModel: AppBarModel(
-              hasArrowBack: true,
-              title: Text(
-                "Order Review",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ))),
+        appBarModel: AppBarModel(
+          hasArrowBack: true,
+          title: Text(
+            "Order Review",
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(TSizes.defaultSpace),
             child: Column(
               children: [
-                const CartItemsList(
-                  showAddRemoveButtons: false,
-                ),
-                const SizedBox(
-                  height: TSizes.spaceBtwSections,
-                ),
+                const CartItemsList(showAddRemoveButtons: false),
+                const SizedBox(height: TSizes.spaceBtwSections),
                 const CouponCode(),
-                const SizedBox(
-                  height: TSizes.spaceBtwSections,
-                ),
+                const SizedBox(height: TSizes.spaceBtwSections),
                 CircularContainer(
-                    circularContainerModel: CircularContainerModel(
-                        showBorder: true,
-                        padding: const EdgeInsets.all(TSizes.md),
-                        color: dark ? TColors.black : TColors.white,
-                        child: const Column(
-                          children: [
-                            BillingAmountSection(),
-                            SizedBox(
-                              height: TSizes.spaceBtwItems,
-                            ),
-                            Divider(),
-                            SizedBox(
-                              height: TSizes.spaceBtwItems,
-                            ),
-                            BillingPaymentSection(),
-                            SizedBox(
-                              height: TSizes.spaceBtwItems,
-                            ),
-                            Divider(),
-                            SizedBox(
-                              height: TSizes.spaceBtwItems,
-                            ),
-                            BillingAddressSection()
-                          ],
-                        ))),
+                  circularContainerModel: CircularContainerModel(
+                    showBorder: true,
+                    padding: const EdgeInsets.all(TSizes.md),
+                    color: dark ? TColors.black : TColors.white,
+                    child: const Column(
+                      children: [
+                        BillingAmountSection(),
+                        SizedBox(height: TSizes.spaceBtwItems),
+                        Divider(),
+                        SizedBox(height: TSizes.spaceBtwItems),
+                        BillingPaymentSection(),
+                        SizedBox(height: TSizes.spaceBtwItems),
+                        Divider(),
+                        SizedBox(height: TSizes.spaceBtwItems),
+                        BillingAddressSection(),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

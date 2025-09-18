@@ -76,8 +76,8 @@ class CartItemModel extends Equatable {
   double get totalPrice => itemPrice * quantity;
 
   // Get display price
-  String get displayPrice => '\$${itemPrice.toStringAsFixed(2)}';
-  String get displayTotalPrice => '\$${totalPrice.toStringAsFixed(2)}';
+  String get displayPrice => 'RM${itemPrice.toStringAsFixed(2)}';
+  String get displayTotalPrice => 'RM${totalPrice.toStringAsFixed(2)}';
 
   // Copy with method for quantity updates
   CartItemModel copyWith({

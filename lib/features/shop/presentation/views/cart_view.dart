@@ -255,7 +255,7 @@ class _CartViewState extends State<CartView> {
                   ),
                 ),
                 Text(
-                  '\$${_cartTotal.toStringAsFixed(2)}',
+                  'RM${_cartTotal.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: TColors.primary,
                     fontWeight: FontWeight.bold,
@@ -280,7 +280,7 @@ class _CartViewState extends State<CartView> {
                 ),
               ),
               child: Text(
-                'Proceed to Checkout - \$${_cartTotal.toStringAsFixed(2)}',
+                'Proceed to Checkout - RM${_cartTotal.toStringAsFixed(2)}',
                 style: const TextStyle(
                   color: TColors.white,
                   fontSize: 16,

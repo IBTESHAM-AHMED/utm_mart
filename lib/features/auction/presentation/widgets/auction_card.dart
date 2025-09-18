@@ -138,7 +138,7 @@ class AuctionCard extends StatelessWidget {
                               ?.copyWith(color: Colors.grey[600]),
                         ),
                         Text(
-                          '\$${auction.currentBid.toStringAsFixed(2)}',
+                          'RM${auction.currentBid.toStringAsFixed(2)}',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
                                 color: TColors.primary,

@@ -126,10 +126,10 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
                       child: TextFormField(
                         controller: _itemPriceController,
                         decoration: const InputDecoration(
-                          labelText: 'Price (\$)',
+                          labelText: 'Price (RM)',
                           hintText: '0.00',
                           border: OutlineInputBorder(),
-                          prefixText: '\$ ',
+                          prefixText: 'RM ',
                         ),
                         keyboardType: TextInputType.numberWithOptions(
                           decimal: true,

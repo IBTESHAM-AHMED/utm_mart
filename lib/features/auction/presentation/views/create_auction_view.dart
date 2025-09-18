@@ -342,7 +342,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
               TextFormField(
                 controller: _startingPriceController,
                 decoration: const InputDecoration(
-                  labelText: 'Starting Price (\$)',
+                  labelText: 'Starting Price (RM)',
                   hintText: '0.00',
                   border: OutlineInputBorder(),
                 ),

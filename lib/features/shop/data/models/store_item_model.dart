@@ -163,7 +163,7 @@ class StoreItemModel extends Equatable {
   bool get isAvailable => itemStock > 0 && buyerUid == null;
 
   // Get display price with currency
-  String get displayPrice => '\$${itemPrice.toStringAsFixed(2)}';
+  String get displayPrice => 'RM${itemPrice.toStringAsFixed(2)}';
 
   @override
   List<Object?> get props => [

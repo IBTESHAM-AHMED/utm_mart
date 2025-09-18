@@ -207,7 +207,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
-                        '\$${auction.currentBid.toStringAsFixed(2)}',
+                        'RM${auction.currentBid.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               color: TColors.primary,
@@ -227,7 +227,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                         ),
                       ),
                       Text(
-                        '\$${auction.startingPrice.toStringAsFixed(2)}',
+                        'RM${auction.startingPrice.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -248,7 +248,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                               ),
                         ),
                         Text(
-                          '\$${auction.buyNowPrice!.toStringAsFixed(2)}',
+                          'RM${auction.buyNowPrice!.toStringAsFixed(2)}',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: Colors.green[600],
@@ -357,8 +357,8 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                         labelText: 'Bid Amount',
                         hintText: 'Enter your bid',
                         border: const OutlineInputBorder(),
-                        prefixText: '\$ ',
-                        suffixText: 'USD',
+                        prefixText: 'RM ',
+                        suffixText: 'MYR',
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -421,7 +421,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                           ),
                         )
                       : Text(
-                          'Buy Now - \$${auction.buyNowPrice!.toStringAsFixed(2)}',
+                          'Buy Now - RM${auction.buyNowPrice!.toStringAsFixed(2)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -514,7 +514,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
                           Row(
                             children: [
                               Text(
-                                '\$${bid.amount.toStringAsFixed(2)}',
+                                'RM${bid.amount.toStringAsFixed(2)}',
                                 style: Theme.of(context).textTheme.bodyLarge
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
@@ -564,7 +564,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
       THelperFunctions.showSnackBar(
         context: context,
         message:
-            'Bid must be higher than current bid of \$${_currentAuction!.currentBid.toStringAsFixed(2)}',
+            'Bid must be higher than current bid of RM${_currentAuction!.currentBid.toStringAsFixed(2)}',
         type: SnackBarType.error,
       );
       return;

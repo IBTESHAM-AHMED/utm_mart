@@ -15,9 +15,7 @@ import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 
 class ProductAttributes extends StatelessWidget {
-  const ProductAttributes({
-    super.key,
-  });
+  const ProductAttributes({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,46 +37,50 @@ class ProductAttributes extends StatelessWidget {
                         showActionButton: false,
                       ),
                     ),
-                    const SizedBox(
-                      width: TSizes.spaceBtwItems,
-                    ),
+                    const SizedBox(width: TSizes.spaceBtwItems),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             ProductTitleText(
-                                productTitleTextModel: ProductTitleTextModel(
-                                    title: "Price : ", smallSize: true)),
+                              productTitleTextModel: ProductTitleTextModel(
+                                title: "Price : ",
+                                smallSize: true,
+                              ),
+                            ),
                             Text(
-                              " \$250",
-                              style:
-                                  Theme.of(context).textTheme.titleSmall!.apply(
-                                        decoration: TextDecoration.lineThrough,
-                                      ),
+                              " RM250",
+                              style: Theme.of(context).textTheme.titleSmall!
+                                  .apply(
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
                             ),
-                            const SizedBox(
-                              width: TSizes.spaceBtwItems,
-                            ),
+                            const SizedBox(width: TSizes.spaceBtwItems),
                             ProductPriceText(
                               productPriceTextModel: ProductPriceTextModel(
                                 price: "175",
                                 smallSize: true,
                               ),
-                            )
+                            ),
                           ],
                         ),
                         Row(
                           children: [
                             ProductTitleText(
-                                productTitleTextModel: ProductTitleTextModel(
-                                    title: "Stock : ", smallSize: true)),
-                            Text("In Stock",
-                                style: Theme.of(context).textTheme.titleMedium),
+                              productTitleTextModel: ProductTitleTextModel(
+                                title: "Stock : ",
+                                smallSize: true,
+                              ),
+                            ),
+                            Text(
+                              "In Stock",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ],
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
                 ProductTitleText(
@@ -93,9 +95,7 @@ class ProductAttributes extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(
-          height: TSizes.spaceBtwItems,
-        ),
+        const SizedBox(height: TSizes.spaceBtwItems),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -105,9 +105,7 @@ class ProductAttributes extends StatelessWidget {
                 title: "Colors",
               ),
             ),
-            const SizedBox(
-              height: TSizes.spaceBtwItems / 2,
-            ),
+            const SizedBox(height: TSizes.spaceBtwItems / 2),
             Wrap(
               spacing: 8,
               children: [
@@ -143,9 +141,7 @@ class ProductAttributes extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(
-          height: TSizes.spaceBtwItems,
-        ),
+        const SizedBox(height: TSizes.spaceBtwItems),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -155,9 +151,7 @@ class ProductAttributes extends StatelessWidget {
                 title: "Sizes",
               ),
             ),
-            const SizedBox(
-              height: TSizes.spaceBtwItems / 2,
-            ),
+            const SizedBox(height: TSizes.spaceBtwItems / 2),
             Wrap(
               spacing: 8,
               children: [
