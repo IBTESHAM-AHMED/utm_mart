@@ -5,6 +5,7 @@ import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrderListItem extends StatefulWidget {
   final QueryDocumentSnapshot order;
@@ -17,6 +18,54 @@ class OrderListItem extends StatefulWidget {
 
 class _OrderListItemState extends State<OrderListItem> {
   final FirebaseService _firebaseService = sl<FirebaseService>();
+  Map<String, String?>? _vendorInfo;
+  Map<String, String?>? _customerInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContactInfo();
+  }
+
+  Future<void> _loadContactInfo() async {
+    final data = widget.order.data() as Map<String, dynamic>;
+
+    // Load seller info if missing
+    String? sellerUid;
+    if (data['sellerUid'] != null) {
+      // For auction orders - sellerUid is at order level
+      sellerUid = data['sellerUid'];
+    } else if (data['items'] != null && (data['items'] as List).isNotEmpty) {
+      // For regular orders - sellerUid is in the first item
+      final firstItem = (data['items'] as List).first as Map<String, dynamic>;
+      sellerUid = firstItem['sellerUid'];
+    }
+
+    if (data['vendorPhone'] == null && sellerUid != null) {
+      print('🔍 Loading seller info for ID: $sellerUid');
+      final sellerInfo = await _getUserInfo(sellerUid);
+      print('📞 Seller info loaded: $sellerInfo');
+      if (mounted) {
+        setState(() {
+          _vendorInfo = sellerInfo;
+        });
+      }
+    }
+
+    // Load customer info if missing (for auction orders)
+    if (data['customerPhone'] == null &&
+        data['customerId'] != null &&
+        data['isAuctionOrder'] == true) {
+      print('🔍 Loading customer info for ID: ${data['customerId']}');
+      final customerInfo = await _getUserInfo(data['customerId']);
+      print('📞 Customer info loaded: $customerInfo');
+      if (mounted) {
+        setState(() {
+          _customerInfo = customerInfo;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,6 +272,165 @@ class _OrderListItemState extends State<OrderListItem> {
                     'Total',
                     'RM${total.toStringAsFixed(2)}',
                     isTotal: true,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: TSizes.lg),
+
+            // Contact Information Section
+            Container(
+              padding: const EdgeInsets.all(TSizes.md),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(TSizes.md),
+                border: Border.all(color: Colors.orange.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.contact_phone, color: Colors.orange, size: 20),
+                      const SizedBox(width: TSizes.sm),
+                      Text(
+                        'Contact Information',
+                        style: Theme.of(context).textTheme.titleMedium?.apply(
+                          fontWeightDelta: 1,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: TSizes.sm),
+                  Row(
+                    children: [
+                      // Buyer Contact
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Buyer',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.apply(
+                                    fontWeightDelta: 2,
+                                    color: Colors.orange[700],
+                                  ),
+                            ),
+                            const SizedBox(height: TSizes.xs / 2),
+                            Text(
+                              data['customerName'] ??
+                                  _customerInfo?['name'] ??
+                                  'N/A',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.apply(fontWeightDelta: 1),
+                            ),
+                            GestureDetector(
+                              onTap: () => _makePhoneCall(
+                                data['customerPhone'] ??
+                                    _customerInfo?['phone'],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.phone,
+                                    size: 14,
+                                    color: Colors.orange[600],
+                                  ),
+                                  const SizedBox(width: TSizes.xs / 2),
+                                  Text(
+                                    data['customerPhone'] ??
+                                        _customerInfo?['phone'] ??
+                                        'N/A',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.apply(
+                                          color:
+                                              (data['customerPhone'] ??
+                                                      _customerInfo?['phone']) !=
+                                                  null
+                                              ? Colors.orange[600]
+                                              : Colors.grey[600],
+                                          decoration:
+                                              (data['customerPhone'] ??
+                                                      _customerInfo?['phone']) !=
+                                                  null
+                                              ? TextDecoration.underline
+                                              : TextDecoration.none,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Seller Contact
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Seller',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.apply(
+                                    fontWeightDelta: 2,
+                                    color: Colors.orange[700],
+                                  ),
+                            ),
+                            const SizedBox(height: TSizes.xs / 2),
+                            Text(
+                              data['vendorName'] ??
+                                  data['sellerName'] ??
+                                  _vendorInfo?['name'] ??
+                                  'N/A',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.apply(fontWeightDelta: 1),
+                            ),
+                            GestureDetector(
+                              onTap: () => _makePhoneCall(
+                                data['vendorPhone'] ?? _vendorInfo?['phone'],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.phone,
+                                    size: 14,
+                                    color: Colors.orange[600],
+                                  ),
+                                  const SizedBox(width: TSizes.xs / 2),
+                                  Text(
+                                    data['vendorPhone'] ??
+                                        _vendorInfo?['phone'] ??
+                                        'N/A',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.apply(
+                                          color:
+                                              (data['vendorPhone'] ??
+                                                      _vendorInfo?['phone']) !=
+                                                  null
+                                              ? Colors.orange[600]
+                                              : Colors.grey[600],
+                                          decoration:
+                                              (data['vendorPhone'] ??
+                                                      _vendorInfo?['phone']) !=
+                                                  null
+                                              ? TextDecoration.underline
+                                              : TextDecoration.none,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -608,6 +816,72 @@ class _OrderListItemState extends State<OrderListItem> {
         return Colors.purple;
       default:
         return Colors.grey;
+    }
+  }
+
+  Future<void> _makePhoneCall(String? phoneNumber) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Phone number not available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cannot make phone call'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error making phone call: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<Map<String, String?>> _getUserInfo(String userId) async {
+    try {
+      print('🔍 Fetching user info for ID: $userId');
+      final userDoc = await _firebaseService.firestore
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        print('✅ User document found: $userData');
+        final result = <String, String?>{
+          'name': '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
+              .trim(),
+          'phone': userData['phoneNumber'] ?? '',
+        };
+        print('📞 Processed user info: $result');
+        return result;
+      } else {
+        print('❌ User document not found for ID: $userId');
+        return {'name': 'Unknown User', 'phone': ''};
+      }
+    } catch (e) {
+      print('❌ Error getting user info for $userId: $e');
+      return {'name': 'Unknown User', 'phone': ''};
     }
   }
 }

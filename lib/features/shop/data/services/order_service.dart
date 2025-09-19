@@ -27,6 +27,7 @@ class OrderService {
         'customerName': customer.fullName,
         'customerEmail': customer.email,
         'customerPhone': customer.phoneNumber,
+        'sellerUid': cartItems.first.sellerUid,
         'items': cartItems
             .map(
               (item) => {
