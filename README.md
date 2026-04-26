@@ -41,19 +41,14 @@ The shopping flow also integrates REST APIs through Dio, demonstrating hybrid ba
 
 ### Framework and Language
 `Flutter`, `Dart`
-
 ### Architecture and State
 `flutter_bloc`, `get_it`, `dartz`, `equatable`
-
 ### Backend and Data
 `firebase_core`, `firebase_auth`, `cloud_firestore`, `firebase_storage`, `firebase_messaging`, `firebase_analytics`, `dio`, `http`, `shared_preferences`
-
 ### UI and Experience
 `cached_network_image`, `carousel_slider`, `shimmer`, `lottie`, `smooth_page_indicator`, `flutter_rating_bar`, `readmore`
-
 ### Device and Utilities
 `image_picker`, `geolocator`, `geocoding`, `permission_handler`, `url_launcher`, `intl`, `logger`, `flutter_dotenv`, `mailer`
-
 
 ## Getting Started
 
