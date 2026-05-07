@@ -60,6 +60,14 @@ The shopping flow also integrates REST APIs through Dio, demonstrating hybrid ba
 ## Demo
 Onboarding Screens
 
-https://github.com/user-attachments/assets/30eb36c2-ede5-42f6-b2b7-94b71e379ff8
+<div align="center">
+  <video
+    controls
+    playsinline
+    style="max-width: 360px; width: 100%; display: block; margin: 0 auto;"
+  >
+    <source src="https://github.com/user-attachments/assets/30eb36c2-ede5-42f6-b2b7-94b71e379ff8" />
+  </video>
+</div>
 
 Screenshots and GIF demos will be added here.
