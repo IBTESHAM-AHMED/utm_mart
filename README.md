@@ -57,6 +57,9 @@ The shopping flow also integrates REST APIs through Dio, demonstrating hybrid ba
 3. Add Firebase config files for your environment.
 4. Run `flutter run`.
 
-## Screenshots
+## Demo
+Onboarding Screens
+
 https://github.com/user-attachments/assets/30eb36c2-ede5-42f6-b2b7-94b71e379ff8
+
 Screenshots and GIF demos will be added here.
