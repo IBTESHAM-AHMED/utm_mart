@@ -58,7 +58,8 @@ The shopping flow also integrates REST APIs through Dio, demonstrating hybrid ba
 4. Run `flutter run`.
 
 ## Demo
-Onboarding Screens
+
+### Onboarding Screens
 
 <div align="center">
   <video
@@ -70,4 +71,16 @@ Onboarding Screens
   </video>
 </div>
 
-Screenshots and GIF demos will be added here.
+### Screenshots
+
+| Sign In | Sign Up | Home |
+|:---:|:---:|:---:|
+| ![Sign In](assets/demo/01-sign-in.jpeg) | ![Sign Up](assets/demo/02-sign-up.jpeg) | ![Home](assets/demo/03-home.jpeg) |
+
+| Store | Product Detail | Cart |
+|:---:|:---:|:---:|
+| ![Store](assets/demo/04-store-browse.jpeg) | ![Product Detail](assets/demo/05-product-detail.jpeg) | ![Cart](assets/demo/06-cart.jpeg) |
+
+| Auction Details | Seller Dashboard |
+|:---:|:---:|
+| ![Auction Details](assets/demo/07-auction-details.jpeg) | ![Seller Dashboard](assets/demo/08-seller-dashboard.jpeg) |
