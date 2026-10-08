@@ -67,10 +67,11 @@ class _LoginFormSectionState extends State<LoginFormSection> {
                 BlocProvider(
                   create: (context) => CachedUserCubit()..getCachedUser(),
                 ),
-                BlocProvider(
-                  create: (context) =>
-                      getIt<ShopCubit>()
-                        ..getSortedProducts(sortBy: 'rating', sortType: "desc"),
+                // ShopCubit is a GetIt singleton; `.value` keeps the provider
+                // from closing it when this route is replaced (e.g. on logout).
+                BlocProvider.value(
+                  value: getIt<ShopCubit>()
+                    ..getSortedProducts(sortBy: 'rating', sortType: "desc"),
                 ),
               ],
               child: const NavigationMenu(),

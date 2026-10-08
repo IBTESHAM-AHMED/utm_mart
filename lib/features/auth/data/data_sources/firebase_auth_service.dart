@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,7 +83,7 @@ class FirebaseAuthServiceImpl implements FirebaseAuthService {
       if (createDocResult.isLeft()) {
         // If Firestore creation fails, we should still complete the registration
         // but log the error
-        print('Warning: Failed to create user document in Firestore');
+        debugPrint('Warning: Failed to create user document in Firestore');
       }
 
       // Store personal data locally for backward compatibility

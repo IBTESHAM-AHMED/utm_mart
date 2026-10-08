@@ -11,6 +11,7 @@ class LoginCubit extends Cubit<LoginState> {
     emit(state.copyWith(status: LoginStatus.loading));
 
     final result = await sl<FirebaseLoginUsecase>().call(param: params);
+    if (isClosed) return;
 
     result.fold(
       (error) {
