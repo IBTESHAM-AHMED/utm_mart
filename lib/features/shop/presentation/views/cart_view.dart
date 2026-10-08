@@ -79,14 +79,16 @@ class _CartViewState extends State<CartView> {
             'Your cart is empty',
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(color: TColors.grey),
+            ).textTheme.headlineSmall?.copyWith(
+              color: THelperFunctions.mutedTextColor(context),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Add items from the store to get started',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: TColors.grey),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: THelperFunctions.mutedTextColor(context),
+            ),
           ),
         ],
       ),
@@ -160,9 +162,9 @@ class _CartViewState extends State<CartView> {
                   ),
                   Text(
                     '${item.itemBrand} • ${item.itemCategory}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: TColors.grey),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: THelperFunctions.mutedTextColor(context),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(

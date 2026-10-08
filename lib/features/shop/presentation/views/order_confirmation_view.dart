@@ -145,9 +145,9 @@ class _OrderConfirmationViewState extends State<OrderConfirmationView> {
                   ),
                   Text(
                     '${item.itemBrand} • Qty: ${item.quantity}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: TColors.grey),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: THelperFunctions.mutedTextColor(context),
+                    ),
                   ),
                 ],
               ),

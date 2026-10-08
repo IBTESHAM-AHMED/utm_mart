@@ -273,6 +273,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildStoreItemCard(StoreItemModel item) {
+    final muted = THelperFunctions.mutedTextColor(context);
     return GestureDetector(
       onTap: () {
         THelperFunctions.navigateToScreen(
@@ -280,11 +281,12 @@ class _HomeViewState extends State<HomeView> {
           StoreItemDetailView(item: item),
         );
       },
-      child: Container(
-        decoration: BoxDecoration(
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 2,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(TSizes.productImageRadius),
-          border: Border.all(color: Colors.grey.shade300),
-          color: Colors.white,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,7 +331,7 @@ class _HomeViewState extends State<HomeView> {
                       item.itemBrand,
                       style: Theme.of(
                         context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                      ).textTheme.bodySmall?.copyWith(color: muted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -350,7 +352,7 @@ class _HomeViewState extends State<HomeView> {
                         Text(
                           '${item.itemStock}',
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: muted),
                         ),
                       ],
                     ),

@@ -121,15 +121,21 @@ class _StoreItemDetailViewState extends State<StoreItemDetailView> {
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: TColors.grey.withOpacity(0.1),
-                  child: const Center(
+                  child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.broken_image, size: 64, color: TColors.grey),
-                        SizedBox(height: 8),
+                        const Icon(
+                          Icons.broken_image,
+                          size: 64,
+                          color: TColors.grey,
+                        ),
+                        const SizedBox(height: 8),
                         Text(
                           'Image not available',
-                          style: TextStyle(color: TColors.grey),
+                          style: TextStyle(
+                            color: THelperFunctions.mutedTextColor(context),
+                          ),
                         ),
                       ],
                     ),
@@ -137,19 +143,21 @@ class _StoreItemDetailViewState extends State<StoreItemDetailView> {
                 );
               },
             )
-          : const Center(
+          : Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.image_not_supported,
                     size: 64,
                     color: TColors.grey,
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     'No image available',
-                    style: TextStyle(color: TColors.grey),
+                    style: TextStyle(
+                      color: THelperFunctions.mutedTextColor(context),
+                    ),
                   ),
                 ],
               ),
@@ -240,7 +248,7 @@ class _StoreItemDetailViewState extends State<StoreItemDetailView> {
             widget.item.itemDescription,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: TColors.dark, height: 1.6),
+            ).textTheme.bodyMedium?.copyWith(height: 1.6),
           ),
         ),
       ],
