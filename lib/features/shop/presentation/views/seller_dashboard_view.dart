@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -48,6 +49,68 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
   SellerOrderCategory _selectedOrderCategory = SellerOrderCategory.all;
   SellerOrderStatusFilter _selectedOrderStatus = SellerOrderStatusFilter.all;
 
+  // Built once (lazily) so the 30s refresh timer doesn't resubscribe it.
+  late final Stream<List<QueryDocumentSnapshot>> _sellerOrdersStream =
+      _buildSellerOrdersStream();
+
+  /// Orders this user sells in. Firestore rules only allow reading orders the
+  /// user is a party to, so this cannot read the whole collection. Two queries
+  /// are merged: `sellerUid` (every order, incl. auctions) and `sellerUids`
+  /// (orders whose cart contained several sellers).
+  Stream<List<QueryDocumentSnapshot>> _buildSellerOrdersStream() {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return Stream.value(const []);
+
+    final orders = _firebaseService.firestore.collection('orders');
+    var primary = <QueryDocumentSnapshot>[];
+    var secondary = <QueryDocumentSnapshot>[];
+    var gotPrimary = false;
+    var gotSecondary = false;
+    StreamSubscription<QuerySnapshot>? primarySub;
+    StreamSubscription<QuerySnapshot>? secondarySub;
+    late final StreamController<List<QueryDocumentSnapshot>> controller;
+
+    void publish() {
+      if (!gotPrimary || !gotSecondary) return;
+      final byId = <String, QueryDocumentSnapshot>{
+        for (final doc in [...primary, ...secondary]) doc.id: doc,
+      };
+      controller.add(byId.values.toList());
+    }
+
+    // Broadcast: the orders tab's StreamBuilder can unmount and re-mount
+    // (tab switches, rebuilds), and each mount subscribes again.
+    controller = StreamController<List<QueryDocumentSnapshot>>.broadcast(
+      onListen: () {
+        primary = <QueryDocumentSnapshot>[];
+        secondary = <QueryDocumentSnapshot>[];
+        gotPrimary = false;
+        gotSecondary = false;
+        primarySub = orders
+            .where('sellerUid', isEqualTo: uid)
+            .snapshots()
+            .listen((snap) {
+          primary = List<QueryDocumentSnapshot>.from(snap.docs);
+          gotPrimary = true;
+          publish();
+        }, onError: controller.addError);
+        secondarySub = orders
+            .where('sellerUids', arrayContains: uid)
+            .snapshots()
+            .listen((snap) {
+          secondary = List<QueryDocumentSnapshot>.from(snap.docs);
+          gotSecondary = true;
+          publish();
+        }, onError: controller.addError);
+      },
+      onCancel: () async {
+        await primarySub?.cancel();
+        await secondarySub?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -81,7 +144,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     try {
       await _auctionService.checkAndEndExpiredAuctions();
     } catch (e) {
-      print('Error checking expired auctions: $e');
+      debugPrint('Error checking expired auctions: $e');
     }
   }
 
@@ -201,6 +264,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                 'itemImageUrl': imageUrlController.text.trim(),
                 'updatedAt': DateTime.now().toIso8601String(),
               });
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
             child: const Text('Update'),
@@ -231,6 +295,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
           ElevatedButton(
             onPressed: () async {
               await _deleteItemFromFirestore(itemId);
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -486,7 +551,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     ],
                   ),
                   const SizedBox(height: TSizes.sm),
-                  ...items.map((item) => _buildOrderItemRow(item)).toList(),
+                  ...items.map((item) => _buildOrderItemRow(item)),
                 ],
               ),
             ),
@@ -775,7 +840,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
   // Confirm payment and close order
   Future<void> _confirmPaymentAndCloseOrder(String orderId) async {
     try {
-      print('🔄 Confirming payment and closing order $orderId');
+      debugPrint('🔄 Confirming payment and closing order $orderId');
 
       await _firebaseService.firestore
           .collection('orders')
@@ -786,7 +851,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
             'updatedAt': FieldValue.serverTimestamp(),
           });
 
-      print('✅ Order closed and payment confirmed successfully');
+      debugPrint('✅ Order closed and payment confirmed successfully');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -797,7 +862,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
         );
       }
     } catch (e) {
-      print('❌ Error confirming payment and closing order: $e');
+      debugPrint('❌ Error confirming payment and closing order: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -812,7 +877,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
   // Update order status
   Future<void> _updateOrderStatus(String orderId, String newStatus) async {
     try {
-      print('🔄 Updating order $orderId to status: $newStatus');
+      debugPrint('🔄 Updating order $orderId to status: $newStatus');
 
       // Get order details first
       final orderDoc = await _firebaseService.firestore
@@ -841,7 +906,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
         orderNumber: orderNumber,
       );
 
-      print('✅ Order status updated successfully');
+      debugPrint('✅ Order status updated successfully');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -852,7 +917,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
         );
       }
     } catch (e) {
-      print('❌ Error updating order status: $e');
+      debugPrint('❌ Error updating order status: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1111,10 +1176,10 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        auction.imageUrl,
+                      child: CachedNetworkImage(
+                        imageUrl: auction.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorWidget: (context, url, error) {
                           return Container(
                             color: Colors.grey.withOpacity(0.1),
                             child: const Icon(Icons.image_not_supported),
@@ -1414,11 +1479,11 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                           final data = doc.data() as Map<String, dynamic>;
 
                           // Debug: Print the document data to see what fields are available
-                          print('Store item data: $data');
-                          print(
+                          debugPrint('Store item data: $data');
+                          debugPrint(
                             'Description field: ${data['itemDescription'] ?? data['description'] ?? 'NOT FOUND'}',
                           );
-                          print(
+                          debugPrint(
                             'Image field: ${data['itemImageUrl'] ?? data['imageUrl'] ?? data['image'] ?? 'NOT FOUND'}',
                           );
 
@@ -1605,10 +1670,8 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(TSizes.defaultSpace),
-                        child: StreamBuilder<QuerySnapshot>(
-                          stream: _firebaseService.firestore
-                              .collection('orders')
-                              .snapshots(),
+                        child: StreamBuilder<List<QueryDocumentSnapshot>>(
+                          stream: _sellerOrdersStream,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
@@ -1623,14 +1686,13 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                               );
                             }
 
-                            if (!snapshot.hasData ||
-                                snapshot.data!.docs.isEmpty) {
+                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
                               return _buildSellerEmptyState();
                             }
 
                             // Filter orders for seller
                             final filteredOrders = _filterSellerOrders(
-                              snapshot.data!.docs,
+                              snapshot.data!,
                             );
 
                             if (filteredOrders.isEmpty) {
@@ -1858,10 +1920,13 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
 
       // Check if current user is the seller in any of the items
       final items = data['items'] as List<dynamic>? ?? [];
-      final isSellerOrder = items.any((item) {
-        final itemData = item as Map<String, dynamic>;
-        return itemData['sellerUid'] == currentUserId;
-      });
+      // Auction orders carry the seller only at the top level, not per item.
+      final isSellerOrder =
+          data['sellerUid'] == currentUserId ||
+          items.any((item) {
+            final itemData = item as Map<String, dynamic>;
+            return itemData['sellerUid'] == currentUserId;
+          });
 
       if (!isSellerOrder) return false;
 
