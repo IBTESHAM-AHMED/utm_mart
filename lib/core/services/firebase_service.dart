@@ -1,15 +1,22 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:utmmart/core/utils/exceptions/firebase_exceptions.dart';
 
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
   factory FirebaseService() => _instance;
   FirebaseService._internal();
+
+  // Messaging subscriptions, kept so a repeated initialize() cannot stack
+  // duplicate listeners.
+  StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<RemoteMessage>? _foregroundMessageSub;
 
   // Firebase instances
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -46,13 +53,13 @@ class FirebaseService {
       // Get FCM token
       String? token = await _messaging.getToken();
       if (token != null) {
-        print('FCM Token: $token');
         // Save token to user document
         await _saveFcmToken(token);
       }
 
       // Handle token refresh
-      _messaging.onTokenRefresh.listen((newToken) {
+      await _tokenRefreshSub?.cancel();
+      _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) {
         _saveFcmToken(newToken);
       });
 
@@ -62,14 +69,11 @@ class FirebaseService {
       );
 
       // Handle foreground messages
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        print('Got a message whilst in the foreground!');
-        print('Message data: ${message.data}');
-        if (message.notification != null) {
-          print(
-            'Message also contained a notification: ${message.notification}',
-          );
-        }
+      await _foregroundMessageSub?.cancel();
+      _foregroundMessageSub = FirebaseMessaging.onMessage.listen((
+        RemoteMessage message,
+      ) {
+        debugPrint('Got a message whilst in the foreground!');
       });
     } catch (e) {
       throw TFirebaseException('Failed to initialize Firebase services: $e');
@@ -85,10 +89,10 @@ class FirebaseService {
           'fcmToken': token,
           'lastUpdated': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
-        print('FCM token saved successfully');
+        debugPrint('FCM token saved successfully');
       }
     } catch (e) {
-      print('Failed to save FCM token: $e');
+      debugPrint('Failed to save FCM token: $e');
     }
   }
 
@@ -271,7 +275,7 @@ class FirebaseService {
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
     } catch (e) {
-      print('Failed to log analytics event: $e');
+      debugPrint('Failed to log analytics event: $e');
     }
   }
 
@@ -302,5 +306,5 @@ class FirebaseService {
 
 // Background message handler
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Handling a background message: ${message.messageId}');
+  debugPrint('Handling a background message: ${message.messageId}');
 }
