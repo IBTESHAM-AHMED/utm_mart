@@ -10,8 +10,9 @@ class FirebaseLoginUsecase
     extends UseCase<Either<String, User>, FirebaseLoginParams> {
   @override
   Future<Either<String, User>> call({FirebaseLoginParams? param}) async {
-    if (param == null)
+    if (param == null) {
       throw ArgumentError('FirebaseLoginParams cannot be null');
+    }
 
     final result = await sl<FirebaseAuthService>().signInWithEmailAndPassword(
       email: param.email,

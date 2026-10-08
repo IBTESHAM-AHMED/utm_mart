@@ -17,8 +17,10 @@ class LogoutCubit extends Cubit<LogoutState> {
 
     try {
       await logoutUsecase.call();
+      if (isClosed) return;
       emit(state.copyWith(status: LogoutStatus.success));
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(
         status: LogoutStatus.failure,
         errorMessage: 'Error during logout: $e', // English
