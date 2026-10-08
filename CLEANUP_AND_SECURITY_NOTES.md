@@ -2,7 +2,7 @@
 
 Date: 2026-10-08 · Branch: `cleanup/baseline`
 
-Status: committed on `cleanup/baseline` in stages (see section 7). Deployed to Firebase: the Firestore **indexes** only. The **rules are not deployed**. The app was run on an Android emulator and a Pixel 6 Pro; the Firestore rules were tested on the local emulator only (see section 8 for what was and was not tested on device).
+Status: committed on `cleanup/baseline` in stages (see section 7). Deployed to Firebase: the Firestore **indexes** and the **Firestore rules**. The **Storage rules are not deployed**: Firebase Storage is not set up on the project yet. The app was run on an Android emulator and a Pixel 6 Pro. The new Firestore rules were tested on the local emulator and are live, but several flows have not been tested on device against them (see section 8).
 
 `flutter analyze`: 312 infos at the start, 118 now. No errors or warnings.
 
@@ -23,9 +23,18 @@ Status: committed on `cleanup/baseline` in stages (see section 7). Deployed to F
 | Seller dashboard orders (`shop/.../seller_dashboard_view.dart`) | Found on device. The merged orders stream was a single-subscription `StreamController`; reopening the Track Order tab threw `Bad state: Stream has already been listened to`. | Now a broadcast controller that resets its cached data on each listen. Confirmed on the phone after a full hot restart (a hot reload does not re-run `late final` initializers). |
 | Cart (`cart_service.dart`) | Found on device. The cart was stored under one key (`cart_items`) in SharedPreferences, so every account on the phone shared one cart. | The key is now `cart_items_<uid>` (`guest` if signed out), read on every call. Carts saved under the old key are ignored (local only, nothing server-side). |
 | Cart badge (`cart_counter_widget.dart`) | Found on device. The store-page badge read the count once in `initState`, so it only updated after leaving and re-entering the page. | `CartService` exposes a `ValueNotifier<int> itemCount`, updated on every save/clear. The badge listens to it. |
+| Home cart button (`home_app_bar.dart`) | Found on device. It used `CartCounterIcon` with the default count of 0, so it never changed. | Wrapped in a `ValueListenableBuilder` on `CartService.itemCount` and refreshes the count on load. |
 | Home grid (`home_view.dart`) | A product card overflowed by 14 px (title two lines + brand + price did not fit). | `childAspectRatio` 0.75 -> 0.56. |
 | Auction expiry check | Found in the logs. The 30-second expired-auction query (`status == active`, `endTime < now`, ordered by `endTime`) failed every time with `FAILED_PRECONDITION: requires an index`. | Added the composite index to `firestore.indexes.json` and deployed it. |
 | `firebase.json` | Had a stray extra `}` at the end, so the Firebase CLI could not parse it and every deploy failed. | Removed the extra brace. |
+
+## 1b. UI fixes (light and dark mode)
+
+- `THelperFunctions.mutedTextColor(context)` (`helper_functions.dart`) returns `#6C757D` in light mode and `#B0B0B0` in dark mode. `TColors.grey` (`#E0E0E0`) was nearly invisible on white and too close to white titles on dark.
+- Used for descriptions, empty states, brand/quantity lines, "Required" labels and "Sold by" text in the store, auction, cart, order confirmation, profile picture, add item, create auction and product card screens.
+- Home "Today's Pick" cards were a hardcoded white `Container` with theme (white) text in dark mode. They are now a `Card`, matching the store list.
+- The item detail description hardcoded `TColors.dark` (black in dark mode). It now follows the theme.
+- Left alone on purpose: the pale-grey greeting label on the purple home header, and decorative pale-grey icons.
 
 ## 2. Cleanup
 
@@ -45,7 +54,7 @@ Orders placed before this change may have reduced stock more than once. Sellers 
 
 ## 4. Security rules (`firestore.rules`, `storage.rules`)
 
-Not deployed. The old `firestore.rules` in the repo was shorter than the one that was live, so it was rewritten from the live version plus the code.
+Firestore rules are deployed; Storage rules are not (see section 5). The old `firestore.rules` in the repo was shorter than the one that was live, so it was rewritten from the live version plus the code.
 
 **Firestore**
 
@@ -66,12 +75,18 @@ Not deployed. The old `firestore.rules` in the repo was shorter than the one tha
 
 **Rules testing**: 66 cases run against the local Firestore emulator, all passing. The same tests fail 25 times against the original rules. Storage rules were only checked for syntax.
 
-## 5. Before you deploy the rules
+## 5. Deploy status and what is left
+
+**Done:** `firebase deploy --only firestore:indexes` and `--only firestore:rules`.
+
+**Storage:** `firebase deploy --only firestore:rules,storage` failed because Firebase Storage has not been set up. Set it up in the console (https://console.firebase.google.com/project/utmmart-13927/storage), then run `firebase deploy --only storage`. Until then `storage.rules` in the repo is not live.
+
+Original checklist:
 
 1. Still to test in the app: checkout (stock drops once), seller approve/ship/close, customer "received", ending an expired auction, logout and re-login. Bidding, login, the seller dashboard and the cart were tested (section 8).
 2. The `auctions` index is already deployed. If another screen reports a missing index, create it from the link in the error or add it to `firestore.indexes.json`.
 3. The Firebase CLI login must be current (`firebase login --reauth`). On this Windows machine PowerShell blocks `firebase.ps1`; use `firebase.cmd` or Command Prompt.
-4. Deploy: `firebase deploy --only firestore:rules,storage`.
+4. Deploy: `firebase deploy --only firestore:rules` (done) and `firebase deploy --only storage` (waiting on Storage setup).
 5. After deploying, repeat the bid and seller-dashboard tests: they were run on device against the **old** live rules, so they do not prove the new rules allow those flows. Only the emulator tests (66 cases) cover the new rules.
 
 **Known limits**
@@ -89,7 +104,6 @@ Not deployed. The old `firestore.rules` in the repo was shorter than the one tha
 - Disposing the `TextEditingController`s in `profile_view.dart` and `user_addresses_view.dart`. Disposing right after `showDialog` can crash during the close animation, so this was skipped.
 - Firebase major-version upgrades.
 
-- The home screen's cart icon (`home_app_bar.dart` -> `CartCounterIcon`) still shows a fixed count of 0 (`CartCounterIconModel.count` defaults to 0). Only the store-page badge is wired to the cart.
 - Old carts under the `cart_items` key are left in SharedPreferences, unused.
 - `CLAUDE.md` is untracked and was not included in these commits.
 
@@ -113,5 +127,6 @@ Android emulator (API 36) and Pixel 6 Pro (API 37), `flutter run` via the Dart M
 | Place a bid | OK, new amount shown on the auction screen |
 | Seller dashboard, Track Order | Failed (stream bug), fixed, OK after restart |
 | Cart per user, badge updates, product image | OK after the fixes above |
+| Light/dark text colors, Today's Pick card, home cart badge | Hot reloaded on the phone; not yet confirmed visually by the user |
 | Expired-auction check | Index error stopped repeating after the index finished building |
 | Logout and re-login, checkout, seller approve/ship, customer "received", ending an expired auction | **Not tested yet** |
