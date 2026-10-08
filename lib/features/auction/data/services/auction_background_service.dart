@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
@@ -30,7 +31,7 @@ class AuctionBackgroundService {
     try {
       await _auctionService.checkAndEndExpiredAuctions();
     } catch (e) {
-      print('❌ Error in background auction check: $e');
+      debugPrint('❌ Error in background auction check: $e');
     }
   }
 
