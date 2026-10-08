@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
@@ -87,6 +88,13 @@ class _OrderListItemState extends State<OrderListItem> {
     final String formattedDate = DateFormat('dd MMM, yyyy').format(orderDate);
     final String formattedTime = DateFormat('HH:mm').format(orderDate);
 
+    final dark = THelperFunctions.isDarkMode(context);
+    final muted = THelperFunctions.mutedTextColor(context);
+    // Section accents: brighter shades on dark surfaces for contrast.
+    final blue = dark ? Colors.blue.shade200 : Colors.blue;
+    final green = dark ? Colors.green.shade300 : Colors.green;
+    final orange = dark ? Colors.orange.shade300 : Colors.orange;
+
     // Get status color and icon
     final statusInfo = _getStatusInfo(status);
 
@@ -112,7 +120,7 @@ class _OrderListItemState extends State<OrderListItem> {
                           Text(
                             'Order #${orderId.substring(0, 12)}',
                             style: Theme.of(context).textTheme.titleLarge
-                                ?.apply(fontWeightDelta: 2, color: Colors.blue),
+                                ?.apply(fontWeightDelta: 2, color: blue),
                           ),
                           const SizedBox(height: TSizes.xs / 2),
                           // Order Type Badge - Compact
@@ -166,7 +174,7 @@ class _OrderListItemState extends State<OrderListItem> {
                         '$formattedDate at $formattedTime',
                         style: Theme.of(
                           context,
-                        ).textTheme.bodySmall?.apply(color: Colors.grey[600]),
+                        ).textTheme.bodySmall?.apply(color: muted),
                       ),
                     ],
                   ),
@@ -209,22 +217,22 @@ class _OrderListItemState extends State<OrderListItem> {
             Container(
               padding: const EdgeInsets.all(TSizes.md),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
+                color: blue.withOpacity(dark ? 0.12 : 0.05),
                 borderRadius: BorderRadius.circular(TSizes.md),
-                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                border: Border.all(color: blue.withOpacity(dark ? 0.35 : 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.shopping_bag, color: Colors.blue, size: 20),
+                      Icon(Icons.shopping_bag, color: blue, size: 20),
                       const SizedBox(width: TSizes.sm),
                       Text(
                         'Order Items (${items.length})',
                         style: Theme.of(context).textTheme.titleMedium?.apply(
                           fontWeightDelta: 1,
-                          color: Colors.blue,
+                          color: blue,
                         ),
                       ),
                     ],
@@ -241,22 +249,22 @@ class _OrderListItemState extends State<OrderListItem> {
             Container(
               padding: const EdgeInsets.all(TSizes.md),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.05),
+                color: green.withOpacity(dark ? 0.12 : 0.05),
                 borderRadius: BorderRadius.circular(TSizes.md),
-                border: Border.all(color: Colors.green.withOpacity(0.2)),
+                border: Border.all(color: green.withOpacity(dark ? 0.35 : 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.receipt, color: Colors.green, size: 20),
+                      Icon(Icons.receipt, color: green, size: 20),
                       const SizedBox(width: TSizes.sm),
                       Text(
                         'Order Summary',
                         style: Theme.of(context).textTheme.titleMedium?.apply(
                           fontWeightDelta: 1,
-                          color: Colors.green,
+                          color: green,
                         ),
                       ),
                     ],
@@ -283,22 +291,22 @@ class _OrderListItemState extends State<OrderListItem> {
             Container(
               padding: const EdgeInsets.all(TSizes.md),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.05),
+                color: orange.withOpacity(dark ? 0.12 : 0.05),
                 borderRadius: BorderRadius.circular(TSizes.md),
-                border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                border: Border.all(color: orange.withOpacity(dark ? 0.35 : 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.contact_phone, color: Colors.orange, size: 20),
+                      Icon(Icons.contact_phone, color: orange, size: 20),
                       const SizedBox(width: TSizes.sm),
                       Text(
                         'Contact Information',
                         style: Theme.of(context).textTheme.titleMedium?.apply(
                           fontWeightDelta: 1,
-                          color: Colors.orange,
+                          color: orange,
                         ),
                       ),
                     ],
@@ -316,7 +324,7 @@ class _OrderListItemState extends State<OrderListItem> {
                               style: Theme.of(context).textTheme.labelMedium
                                   ?.apply(
                                     fontWeightDelta: 2,
-                                    color: Colors.orange[700],
+                                    color: orange,
                                   ),
                             ),
                             const SizedBox(height: TSizes.xs / 2),
@@ -339,7 +347,7 @@ class _OrderListItemState extends State<OrderListItem> {
                                   Icon(
                                     Icons.phone,
                                     size: 14,
-                                    color: Colors.orange[600],
+                                    color: orange,
                                   ),
                                   const SizedBox(width: TSizes.xs / 2),
                                   Text(
@@ -352,8 +360,8 @@ class _OrderListItemState extends State<OrderListItem> {
                                               (data['customerPhone'] ??
                                                       _customerInfo?['phone']) !=
                                                   null
-                                              ? Colors.orange[600]
-                                              : Colors.grey[600],
+                                              ? orange
+                                              : muted,
                                           decoration:
                                               (data['customerPhone'] ??
                                                       _customerInfo?['phone']) !=
@@ -378,7 +386,7 @@ class _OrderListItemState extends State<OrderListItem> {
                               style: Theme.of(context).textTheme.labelMedium
                                   ?.apply(
                                     fontWeightDelta: 2,
-                                    color: Colors.orange[700],
+                                    color: orange,
                                   ),
                             ),
                             const SizedBox(height: TSizes.xs / 2),
@@ -401,7 +409,7 @@ class _OrderListItemState extends State<OrderListItem> {
                                   Icon(
                                     Icons.phone,
                                     size: 14,
-                                    color: Colors.orange[600],
+                                    color: orange,
                                   ),
                                   const SizedBox(width: TSizes.xs / 2),
                                   Text(
@@ -414,8 +422,8 @@ class _OrderListItemState extends State<OrderListItem> {
                                               (data['vendorPhone'] ??
                                                       _vendorInfo?['phone']) !=
                                                   null
-                                              ? Colors.orange[600]
-                                              : Colors.grey[600],
+                                              ? orange
+                                              : muted,
                                           decoration:
                                               (data['vendorPhone'] ??
                                                       _vendorInfo?['phone']) !=
@@ -504,6 +512,8 @@ class _OrderListItemState extends State<OrderListItem> {
 
   // Build order item row
   Widget _buildOrderItemRow(Map<String, dynamic> item) {
+    final dark = THelperFunctions.isDarkMode(context);
+    final muted = THelperFunctions.mutedTextColor(context);
     final String itemName = item['itemName'] ?? 'Unknown Item';
     final int quantity = item['quantity'] ?? 0;
     final double price = (item['itemPrice'] ?? 0.0).toDouble();
@@ -514,9 +524,11 @@ class _OrderListItemState extends State<OrderListItem> {
       margin: const EdgeInsets.only(bottom: TSizes.sm),
       padding: const EdgeInsets.all(TSizes.sm),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: dark ? Colors.white.withOpacity(0.06) : Colors.white,
         borderRadius: BorderRadius.circular(TSizes.sm),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(
+          color: dark ? Colors.white24 : Colors.grey.withOpacity(0.2),
+        ),
       ),
       child: Row(
         children: [
@@ -538,10 +550,10 @@ class _OrderListItemState extends State<OrderListItem> {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: dark ? Colors.white12 : Colors.grey[200],
                 borderRadius: BorderRadius.circular(TSizes.sm),
               ),
-              child: const Icon(Icons.image, color: Colors.grey),
+              child: Icon(Icons.image, color: muted),
             ),
 
           const SizedBox(width: TSizes.sm),
@@ -563,7 +575,7 @@ class _OrderListItemState extends State<OrderListItem> {
                 const SizedBox(height: 2),
                 Text(
                   'Qty: $quantity × RM${price.toStringAsFixed(2)}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(color: muted, fontSize: 12),
                 ),
               ],
             ),
@@ -572,10 +584,10 @@ class _OrderListItemState extends State<OrderListItem> {
           // Total Price
           Text(
             'RM${totalPrice.toStringAsFixed(2)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Colors.blue,
+              color: dark ? Colors.blue.shade200 : Colors.blue,
             ),
           ),
         ],
@@ -585,6 +597,7 @@ class _OrderListItemState extends State<OrderListItem> {
 
   // Build summary row
   Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    final dark = THelperFunctions.isDarkMode(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: TSizes.xs),
       child: Row(
@@ -602,7 +615,9 @@ class _OrderListItemState extends State<OrderListItem> {
             style: TextStyle(
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
               fontSize: isTotal ? 18 : 14,
-              color: isTotal ? Colors.blue : Colors.black,
+              color: isTotal
+                  ? (dark ? Colors.blue.shade200 : Colors.blue)
+                  : null,
             ),
           ),
         ],
