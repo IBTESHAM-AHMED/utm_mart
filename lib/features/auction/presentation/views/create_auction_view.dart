@@ -187,6 +187,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
 
       // Upload image
       final imageUrl = await _imageUploadService.uploadImage(_selectedImage!);
+      if (!mounted) return;
       if (imageUrl == null) {
         THelperFunctions.showSnackBar(
           context: context,
@@ -200,6 +201,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
       // Get current user
       final userResult = await _authService.getCurrentUserDocument();
       final currentUser = userResult.fold((error) => null, (user) => user);
+      if (!mounted) return;
 
       if (currentUser == null) {
         THelperFunctions.showSnackBar(
@@ -232,6 +234,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
 
       // Add to Firestore
       await _auctionService.createAuction(auction);
+      if (!mounted) return;
 
       THelperFunctions.showSnackBar(
         context: context,
@@ -246,6 +249,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
         }
       });
     } catch (e) {
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Failed to create auction: ${e.toString()}',
@@ -319,7 +323,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
 
               // Category
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),
@@ -371,6 +375,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
                     firstDate: DateTime.now().add(const Duration(days: 1)),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                   );
+                  if (!mounted) return;
                   if (date != null) {
                     final time = await showTimePicker(
                       context: context,

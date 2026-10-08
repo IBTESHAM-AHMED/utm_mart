@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:utmmart/features/auction/data/models/auction_model.dart';
@@ -116,12 +117,18 @@ class AuctionFirestoreService {
           (a, b) => a.amount > b.amount ? a : b,
         );
         if (previousHighestBid.bidderUid != bid.bidderUid) {
-          await _notificationService.createAuctionOutbidNotification(
-            auctionId: auctionId,
-            bidderId: previousHighestBid.bidderUid,
-            auctionTitle: auction!.title,
-            newHighestBid: bid.amount,
-          );
+          // The bid is already committed; a notification failure must not
+          // make it look like the bid failed.
+          try {
+            await _notificationService.createAuctionOutbidNotification(
+              auctionId: auctionId,
+              bidderId: previousHighestBid.bidderUid,
+              auctionTitle: auction!.title,
+              newHighestBid: bid.amount,
+            );
+          } catch (e) {
+            debugPrint('Outbid notification failed: $e');
+          }
         }
       }
     } catch (e) {
@@ -271,11 +278,11 @@ class AuctionFirestoreService {
 
       await _firebaseService.firestore.collection('orders').add(orderData);
 
-      print(
+      debugPrint(
         '✅ Order created for auction ${auction.id} - Winner: ${highestBid.bidderName}',
       );
     } catch (e) {
-      print('❌ Error creating order from auction: $e');
+      debugPrint('❌ Error creating order from auction: $e');
       throw Exception('Failed to create order from auction: $e');
     }
   }
@@ -339,13 +346,13 @@ class AuctionFirestoreService {
       for (final doc in expiredAuctions.docs) {
         try {
           await endAuction(doc.id);
-          print('✅ Ended expired auction: ${doc.id}');
+          debugPrint('✅ Ended expired auction: ${doc.id}');
         } catch (e) {
-          print('❌ Error ending expired auction ${doc.id}: $e');
+          debugPrint('❌ Error ending expired auction ${doc.id}: $e');
         }
       }
     } catch (e) {
-      print('❌ Error checking expired auctions: $e');
+      debugPrint('❌ Error checking expired auctions: $e');
     }
   }
 
@@ -361,7 +368,7 @@ class AuctionFirestoreService {
 
       return expiredAuctions.docs.map((doc) => doc.id).toList();
     } catch (e) {
-      print('❌ Error getting expired auction IDs: $e');
+      debugPrint('❌ Error getting expired auction IDs: $e');
       return [];
     }
   }

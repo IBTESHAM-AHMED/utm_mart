@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -272,10 +273,10 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        auction.imageUrl,
+                      child: CachedNetworkImage(
+                        imageUrl: auction.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorWidget: (context, url, error) {
                           return Container(
                             color: TColors.grey.withOpacity(0.1),
                             child: const Icon(Icons.image_not_supported),

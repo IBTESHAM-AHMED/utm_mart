@@ -26,7 +26,7 @@ class _AuctionViewState extends State<AuctionView> {
   // Filter variables
   String _selectedCategory = 'All';
   String _sortBy = 'createdAt'; // createdAt, endTime, currentBid
-  bool _sortAscending = false;
+  final bool _sortAscending = false;
 
   final List<String> _categories = [
     'All',
@@ -138,7 +138,7 @@ class _AuctionViewState extends State<AuctionView> {
                     // Category Filter
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         decoration: InputDecoration(
                           labelText: 'Category',
                           border: OutlineInputBorder(
@@ -169,7 +169,7 @@ class _AuctionViewState extends State<AuctionView> {
                     // Sort Filter
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _sortBy,
+                        initialValue: _sortBy,
                         decoration: InputDecoration(
                           labelText: 'Sort by',
                           border: OutlineInputBorder(

@@ -67,7 +67,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
           });
         }
       } catch (e) {
-        print('Error getting user name: $e');
+        debugPrint('Error getting user name: $e');
         setState(() {
           _currentUserName = 'Unknown User';
         });
@@ -88,7 +88,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
           _currentAuction = _currentAuction!.copyWith(status: 'ended');
         });
       } catch (e) {
-        print('Error ending auction: $e');
+        debugPrint('Error ending auction: $e');
       }
     }
   }
@@ -588,6 +588,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
       final updatedAuction = await _auctionService.getAuctionById(
         _currentAuction!.id!,
       );
+      if (!mounted) return;
       if (updatedAuction != null) {
         setState(() {
           _currentAuction = updatedAuction;
@@ -601,15 +602,18 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
         type: SnackBarType.success,
       );
     } catch (e) {
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Failed to place bid: $e',
         type: SnackBarType.error,
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -647,6 +651,7 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
       final updatedAuction = await _auctionService.getAuctionById(
         _currentAuction!.id!,
       );
+      if (!mounted) return;
       if (updatedAuction != null) {
         setState(() {
           _currentAuction = updatedAuction;
@@ -659,15 +664,18 @@ class _AuctionDetailViewState extends State<AuctionDetailView> {
         type: SnackBarType.success,
       );
     } catch (e) {
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Failed to buy now: $e',
         type: SnackBarType.error,
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
