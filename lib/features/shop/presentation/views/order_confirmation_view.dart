@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:utmmart/core/common/view_models/app_bar_view_model.dart';
 import 'package:utmmart/core/common/widgets/app_bar.dart';
@@ -112,10 +113,10 @@ class _OrderConfirmationViewState extends State<OrderConfirmationView> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: item.itemImageUrl.isNotEmpty
-                    ? Image.network(
-                        item.itemImageUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: item.itemImageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorWidget: (context, url, error) {
                           return Container(
                             color: TColors.grey.withOpacity(0.1),
                             child: const Icon(Icons.image, size: 20),
@@ -272,6 +273,7 @@ class _OrderConfirmationViewState extends State<OrderConfirmationView> {
       // Get current user
       final userResult = await _authService.getCurrentUserDocument();
       final currentUser = userResult.fold((error) => null, (user) => user);
+      if (!mounted) return;
 
       if (currentUser == null) {
         THelperFunctions.showSnackBar(
@@ -291,10 +293,12 @@ class _OrderConfirmationViewState extends State<OrderConfirmationView> {
         tax: _tax,
         total: _total,
       );
+      if (!mounted) return;
 
       if (success) {
         // Clear cart after successful order
         await _cartService.clearCart();
+        if (!mounted) return;
 
         THelperFunctions.showSnackBar(
           context: context,
@@ -312,9 +316,11 @@ class _OrderConfirmationViewState extends State<OrderConfirmationView> {
         );
       }
     } catch (e) {
+      debugPrint('Error placing order: $e');
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
-        message: 'Error placing order: ${e.toString()}',
+        message: 'Something went wrong while placing your order. Please try again.',
         type: SnackBarType.error,
       );
     } finally {

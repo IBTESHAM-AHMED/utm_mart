@@ -308,11 +308,6 @@ class _SellerOrderItemState extends State<SellerOrderItem> {
         {'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()},
       );
 
-      // If status is being changed to approved, update stock
-      if (newStatus == 'approved') {
-        await _updateStockForOrder(orderId);
-      }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -336,46 +331,6 @@ class _SellerOrderItemState extends State<SellerOrderItem> {
           _isUpdating = false;
         });
       }
-    }
-  }
-
-  Future<void> _updateStockForOrder(String orderId) async {
-    try {
-      final orderDoc = await _firebaseService.firestore
-          .collection('orders')
-          .doc(orderId)
-          .get();
-
-      if (orderDoc.exists) {
-        final orderData = orderDoc.data() as Map<String, dynamic>;
-        final items = orderData['items'] as List<dynamic>? ?? [];
-
-        for (final item in items) {
-          final itemData = item as Map<String, dynamic>;
-          final itemId = itemData['itemId'] as String?;
-          final quantity = itemData['quantity'] as int? ?? 0;
-
-          if (itemId != null) {
-            // Update stock in store collection
-            final storeDoc = await _firebaseService.firestore
-                .collection('store')
-                .doc(itemId)
-                .get();
-
-            if (storeDoc.exists) {
-              final currentStock = storeDoc.data()?['itemStock'] ?? 0;
-              final newStock = currentStock - quantity;
-
-              await _firebaseService.firestore
-                  .collection('store')
-                  .doc(itemId)
-                  .update({'itemStock': newStock < 0 ? 0 : newStock});
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('Error updating stock: $e');
     }
   }
 

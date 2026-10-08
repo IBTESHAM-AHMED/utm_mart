@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/features/auth/data/models/firestore_user_model.dart';
 import 'package:utmmart/features/shop/data/models/cart_item_model.dart';
@@ -28,6 +29,8 @@ class OrderService {
         'customerEmail': customer.email,
         'customerPhone': customer.phoneNumber,
         'sellerUid': cartItems.first.sellerUid,
+        // Every seller in the cart, so each can query/read their orders.
+        'sellerUids': cartItems.map((item) => item.sellerUid).toSet().toList(),
         'items': cartItems
             .map(
               (item) => {
@@ -73,7 +76,7 @@ class OrderService {
 
       return true;
     } catch (e) {
-      print('Error creating order: $e');
+      debugPrint('Error creating order: $e');
       return false;
     }
   }
@@ -92,12 +95,12 @@ class OrderService {
           'itemStock': newStock < 0 ? 0 : newStock, // Prevent negative stock
         });
 
-        print(
+        debugPrint(
           'Updated stock for item $itemId: $currentStock -> ${newStock < 0 ? 0 : newStock}',
         );
       }
     } catch (e) {
-      print('Error updating stock for item $itemId: $e');
+      debugPrint('Error updating stock for item $itemId: $e');
     }
   }
 
@@ -118,7 +121,7 @@ class OrderService {
         return data;
       }).toList();
     } catch (e) {
-      print('Error getting customer orders: $e');
+      debugPrint('Error getting customer orders: $e');
       return [];
     }
   }
@@ -138,7 +141,7 @@ class OrderService {
         return data;
       }).toList();
     } catch (e) {
-      print('Error getting seller orders: $e');
+      debugPrint('Error getting seller orders: $e');
       return [];
     }
   }
@@ -152,7 +155,7 @@ class OrderService {
       });
       return true;
     } catch (e) {
-      print('Error updating order status: $e');
+      debugPrint('Error updating order status: $e');
       return false;
     }
   }

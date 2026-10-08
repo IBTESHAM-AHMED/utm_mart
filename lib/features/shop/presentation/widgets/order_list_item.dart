@@ -42,9 +42,9 @@ class _OrderListItemState extends State<OrderListItem> {
     }
 
     if (data['vendorPhone'] == null && sellerUid != null) {
-      print('🔍 Loading seller info for ID: $sellerUid');
+      debugPrint('🔍 Loading seller info for ID: $sellerUid');
       final sellerInfo = await _getUserInfo(sellerUid);
-      print('📞 Seller info loaded: $sellerInfo');
+      debugPrint('📞 Seller info loaded: $sellerInfo');
       if (mounted) {
         setState(() {
           _vendorInfo = sellerInfo;
@@ -56,9 +56,9 @@ class _OrderListItemState extends State<OrderListItem> {
     if (data['customerPhone'] == null &&
         data['customerId'] != null &&
         data['isAuctionOrder'] == true) {
-      print('🔍 Loading customer info for ID: ${data['customerId']}');
+      debugPrint('🔍 Loading customer info for ID: ${data['customerId']}');
       final customerInfo = await _getUserInfo(data['customerId']);
-      print('📞 Customer info loaded: $customerInfo');
+      debugPrint('📞 Customer info loaded: $customerInfo');
       if (mounted) {
         setState(() {
           _customerInfo = customerInfo;
@@ -230,7 +230,7 @@ class _OrderListItemState extends State<OrderListItem> {
                     ],
                   ),
                   const SizedBox(height: TSizes.sm),
-                  ...items.map((item) => _buildOrderItemRow(item)).toList(),
+                  ...items.map((item) => _buildOrderItemRow(item)),
                 ],
               ),
             ),
@@ -640,102 +640,27 @@ class _OrderListItemState extends State<OrderListItem> {
     );
   }
 
-  // Confirm order as received and update stock
+  // Confirm order as received. Stock is only reduced at checkout.
   Future<void> _confirmReceived(String orderId) async {
     try {
-      print('🔍 Customer confirming order received: $orderId');
+      debugPrint('🔍 Customer confirming order received: $orderId');
 
-      // Get the order data first
-      final orderDoc = await _firebaseService.firestore
-          .collection('orders')
-          .doc(orderId)
-          .get();
-
-      if (!orderDoc.exists) {
-        print('❌ Order document does not exist: $orderId');
-        return;
-      }
-
-      final orderData = orderDoc.data() as Map<String, dynamic>;
-      final items = orderData['items'] as List<dynamic>? ?? [];
-
-      print('📦 Found ${items.length} items in order');
-
-      // Update stock for each item BEFORE updating order status
-      for (int i = 0; i < items.length; i++) {
-        final item = items[i];
-        final itemData = item as Map<String, dynamic>;
-        final itemId = itemData['itemId'] as String?;
-        final quantity = (itemData['quantity'] as int?) ?? 0;
-        final itemName = itemData['itemName'] as String? ?? 'Unknown';
-
-        print('🔍 Processing item $i: $itemName (ID: $itemId, Qty: $quantity)');
-
-        if (itemId != null && quantity > 0) {
-          try {
-            print('🔍 Getting store document for itemId: $itemId');
-
-            // Get the store document directly by itemId
-            final storeDoc = await _firebaseService.firestore
-                .collection('store')
-                .doc(itemId)
-                .get();
-
-            if (storeDoc.exists) {
-              final storeData = storeDoc.data() as Map<String, dynamic>;
-              final currentStock = (storeData['itemStock'] as int?) ?? 0;
-
-              print('📊 Store item found:');
-              print('   - Current stock: $currentStock');
-              print('   - Quantity to deduct: $quantity');
-
-              final newStock = currentStock - quantity;
-
-              // Ensure stock doesn't go below 0
-              final finalStock = newStock < 0 ? 0 : newStock;
-
-              print(
-                '🔄 Updating stock: $currentStock - $quantity = $finalStock',
-              );
-
-              await storeDoc.reference.update({
-                'itemStock': finalStock,
-                'updatedAt': FieldValue.serverTimestamp(),
-              });
-
-              print(
-                '✅ Successfully updated stock for item $itemId: $currentStock -> $finalStock',
-              );
-            } else {
-              print('❌ Store item not found: $itemId');
-            }
-          } catch (e) {
-            print('❌ Error updating stock for item $itemId: $e');
-          }
-        } else {
-          print('⚠️ Skipping item: itemId=$itemId, quantity=$quantity');
-        }
-      }
-
-      // Update order status to received AFTER stock is updated
       await _firebaseService.firestore.collection('orders').doc(orderId).update(
         {'status': 'received', 'updatedAt': FieldValue.serverTimestamp()},
       );
 
-      print('✅ Order status updated to received');
+      debugPrint('✅ Order status updated to received');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Order confirmed as received! Stock has been updated.',
-            ),
+            content: Text('Order confirmed as received!'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      print('❌ Error confirming order: $e');
+      debugPrint('❌ Error confirming order: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -859,7 +784,7 @@ class _OrderListItemState extends State<OrderListItem> {
 
   Future<Map<String, String?>> _getUserInfo(String userId) async {
     try {
-      print('🔍 Fetching user info for ID: $userId');
+      debugPrint('🔍 Fetching user info for ID: $userId');
       final userDoc = await _firebaseService.firestore
           .collection('users')
           .doc(userId)
@@ -867,20 +792,20 @@ class _OrderListItemState extends State<OrderListItem> {
 
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
-        print('✅ User document found: $userData');
+        debugPrint('✅ User document found: $userData');
         final result = <String, String?>{
           'name': '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
               .trim(),
           'phone': userData['phoneNumber'] ?? '',
         };
-        print('📞 Processed user info: $result');
+        debugPrint('📞 Processed user info: $result');
         return result;
       } else {
-        print('❌ User document not found for ID: $userId');
+        debugPrint('❌ User document not found for ID: $userId');
         return {'name': 'Unknown User', 'phone': ''};
       }
     } catch (e) {
-      print('❌ Error getting user info for $userId: $e');
+      debugPrint('❌ Error getting user info for $userId: $e');
       return {'name': 'Unknown User', 'phone': ''};
     }
   }
