@@ -33,7 +33,7 @@ class _StoreItemDetailViewState extends State<StoreItemDetailView> {
 
   Future<void> _loadCurrentUser() async {
     final result = await _authService.getCurrentUserDocument();
-    result.fold((error) => print('Error loading current user: $error'), (user) {
+    result.fold((error) => debugPrint('Error loading current user: $error'), (user) {
       if (mounted) {
         setState(() {
           _currentUserId = user.uid;
@@ -432,6 +432,7 @@ class _StoreItemDetailViewState extends State<StoreItemDetailView> {
 
   Future<void> _addToCart() async {
     final success = await _cartService.addToCart(widget.item, _quantity);
+    if (!mounted) return;
 
     if (success) {
       THelperFunctions.showSnackBar(
