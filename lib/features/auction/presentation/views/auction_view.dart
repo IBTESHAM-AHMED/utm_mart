@@ -399,9 +399,9 @@ class _AuctionViewState extends State<AuctionView> {
                     // Auction Description
                     Text(
                       auction.description,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: TColors.grey),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: THelperFunctions.mutedTextColor(context),
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

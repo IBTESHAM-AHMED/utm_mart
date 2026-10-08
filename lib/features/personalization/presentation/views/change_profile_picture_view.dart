@@ -263,9 +263,9 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
                     ? 'Tap "Upload" to save your new profile picture'
                     : 'Tap the camera icon to select a new profile picture',
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: TColors.grey),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: THelperFunctions.mutedTextColor(context),
+                ),
               ),
 
               const SizedBox(height: TSizes.spaceBtwSections),
@@ -322,9 +322,9 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
                     Text(
                       'Your image will be uploaded to a secure server and the URL will be saved in your profile.',
                       textAlign: TextAlign.center,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: TColors.grey),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: THelperFunctions.mutedTextColor(context),
+                      ),
                     ),
                   ],
                 ),

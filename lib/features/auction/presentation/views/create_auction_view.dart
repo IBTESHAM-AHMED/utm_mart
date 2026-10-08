@@ -157,7 +157,10 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
                         const SizedBox(height: 4),
                         Text(
                           'Required',
-                          style: TextStyle(color: TColors.grey, fontSize: 12),
+                          style: TextStyle(
+                            color: THelperFunctions.mutedTextColor(context),
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
