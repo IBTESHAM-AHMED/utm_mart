@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:utmmart/core/common/view_models/app_bar_view_model.dart';
 import 'package:utmmart/core/common/widgets/app_bar.dart';
@@ -122,10 +123,10 @@ class _CartViewState extends State<CartView> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: item.itemImageUrl.isNotEmpty
-                    ? Image.network(
-                        item.itemImageUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: item.itemImageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorWidget: (context, url, error) {
                           return Container(
                             color: TColors.grey.withOpacity(0.1),
                             child: const Icon(
@@ -301,6 +302,7 @@ class _CartViewState extends State<CartView> {
     }
 
     final success = await _cartService.updateQuantity(item.itemId, newQuantity);
+    if (!mounted) return;
     if (success) {
       _loadCartItems(); // Refresh cart
     } else {
@@ -314,6 +316,7 @@ class _CartViewState extends State<CartView> {
 
   Future<void> _removeItem(CartItemModel item) async {
     final success = await _cartService.removeFromCart(item.itemId);
+    if (!mounted) return;
     if (success) {
       THelperFunctions.showSnackBar(
         context: context,

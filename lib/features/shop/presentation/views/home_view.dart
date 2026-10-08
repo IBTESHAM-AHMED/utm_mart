@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:utmmart/core/common/view_models/grid_layout_view_model.dart';
 import 'package:utmmart/core/common/view_models/section_heading_view_model.dart';
 import 'package:utmmart/core/common/widgets/section_heading.dart';
 import 'package:utmmart/core/cubits/banner_carousel_slider_cubit_cubit/banner_carousel_slider_cubit.dart';
@@ -10,7 +9,6 @@ import 'package:utmmart/core/utils/constants/colors.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
-import 'package:utmmart/features/auth/presentation/widgets/grid_layout.dart';
 import 'package:utmmart/features/shop/data/models/store_item_model.dart';
 import 'package:utmmart/features/shop/data/services/store_firestore_service.dart';
 import 'package:utmmart/features/shop/presentation/views/store_view.dart';
@@ -256,7 +254,7 @@ class _HomeViewState extends State<HomeView> {
                             crossAxisCount: 2,
                             mainAxisSpacing: TSizes.gridViewSpacing,
                             crossAxisSpacing: TSizes.gridViewSpacing,
-                            childAspectRatio: 0.75,
+                            childAspectRatio: 0.56,
                           ),
                       itemCount: filteredItems.length,
                       itemBuilder: (context, index) {
