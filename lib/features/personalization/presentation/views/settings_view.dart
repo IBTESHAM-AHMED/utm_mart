@@ -33,6 +33,7 @@ class SettingsView extends StatelessWidget {
           final firebaseUser =
               sl<FirebaseAuthService>().currentUser ??
               fb_auth.FirebaseAuth.instance.currentUser;
+          if (!context.mounted) return;
 
           if (cachedUser != null || firebaseUser != null) {
             THelperFunctions.navigateToScreen(

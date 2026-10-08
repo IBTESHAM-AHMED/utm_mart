@@ -38,7 +38,7 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
     final result = await _authService.getCurrentUserDocument();
     result.fold(
       (error) {
-        print('Error loading current profile: $error');
+        debugPrint('Error loading current profile: $error');
       },
       (user) {
         if (mounted) {
@@ -67,6 +67,7 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Failed to pick image: ${e.toString()}',
@@ -90,23 +91,25 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
     });
 
     try {
-      print('Starting image upload process...');
+      debugPrint('Starting image upload process...');
 
       // Upload image to free hosting service
       final imageUrl = await _imageUploadService.uploadImage(_selectedImage!);
-      print('Upload result: $imageUrl');
+      debugPrint('Upload result: $imageUrl');
+      if (!mounted) return;
 
       if (imageUrl != null) {
-        print('Image uploaded successfully, updating user profile...');
+        debugPrint('Image uploaded successfully, updating user profile...');
 
         // Update user profile with new image URL
         final result = await _authService.updateCurrentUserDocument({
           'profileImageUrl': imageUrl,
         });
+        if (!mounted) return;
 
         result.fold(
           (error) {
-            print('Failed to update profile in Firestore: $error');
+            debugPrint('Failed to update profile in Firestore: $error');
             THelperFunctions.showSnackBar(
               context: context,
               message: 'Failed to update profile: $error',
@@ -114,7 +117,7 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
             );
           },
           (_) {
-            print('Profile updated successfully in Firestore');
+            debugPrint('Profile updated successfully in Firestore');
             THelperFunctions.showSnackBar(
               context: context,
               message: 'Profile picture updated successfully!',
@@ -137,7 +140,7 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
           },
         );
       } else {
-        print('All image upload services failed');
+        debugPrint('All image upload services failed');
         THelperFunctions.showSnackBar(
           context: context,
           message:
@@ -146,7 +149,8 @@ class _ChangeProfilePictureViewState extends State<ChangeProfilePictureView> {
         );
       }
     } catch (e) {
-      print('Upload process error: $e');
+      debugPrint('Upload process error: $e');
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Upload failed: ${e.toString()}',

@@ -328,7 +328,7 @@ class _ProfileViewState extends State<ProfileView> {
                   (Route<dynamic> route) => false,
                 );
               } catch (navError) {
-                print('Navigation error: $navError');
+                debugPrint('Navigation error: $navError');
                 // Fallback: just navigate to login without clearing routes
                 if (mounted) {
                   Navigator.of(context).pushReplacement(
