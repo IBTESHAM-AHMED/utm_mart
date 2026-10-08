@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:utmmart/core/common/view_models/section_heading_view_model.dart';
+import 'package:utmmart/core/depandancy_injection/service_locator.dart';
+import 'package:utmmart/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:utmmart/core/common/widgets/section_heading.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
@@ -30,7 +32,13 @@ class AppSettingsSection extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: () {
+            onPressed: () async {
+              try {
+                await sl<LogoutUsecase>().call();
+              } catch (e) {
+                debugPrint('Logout failed: $e');
+              }
+              if (!context.mounted) return;
               THelperFunctions.navigateReplacementToScreen(
                   context, const LoginView());
             },

@@ -162,7 +162,7 @@ class _UserAddressesViewState extends State<UserAddressesView> {
                       final isDefault = addressDoc?.defaultIndex == index;
 
                       return _buildAddressCard(address, index, isDefault);
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),

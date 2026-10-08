@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -34,11 +35,11 @@ class ImageUploadService {
         final responseData = json.decode(responseBody);
         return responseData['secure_url'];
       } else {
-        print('Cloudinary upload failed: ${response.statusCode}');
+        debugPrint('Cloudinary upload failed: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Cloudinary upload error: $e');
+      debugPrint('Cloudinary upload error: $e');
       return null;
     }
   }
@@ -47,7 +48,7 @@ class ImageUploadService {
   /// Upload to PostImage.org (free, no API key required)
   Future<String?> uploadToPostImage(File imageFile) async {
     try {
-      print('PostImage: Starting upload...');
+      debugPrint('PostImage: Starting upload...');
       final uri = Uri.parse('https://postimages.org/');
 
       final request = http.MultipartRequest('POST', uri);
@@ -63,7 +64,7 @@ class ImageUploadService {
       request.files.add(multipartFile);
 
       final response = await request.send();
-      print('PostImage: Response status ${response.statusCode}');
+      debugPrint('PostImage: Response status ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
@@ -74,18 +75,18 @@ class ImageUploadService {
 
         if (match != null) {
           final imageUrl = match.group(0);
-          print('PostImage: Found URL: $imageUrl');
+          debugPrint('PostImage: Found URL: $imageUrl');
           return imageUrl;
         } else {
-          print('PostImage: Could not extract URL from response');
+          debugPrint('PostImage: Could not extract URL from response');
           return null;
         }
       } else {
-        print('PostImage HTTP error: ${response.statusCode}');
+        debugPrint('PostImage HTTP error: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('PostImage upload error: $e');
+      debugPrint('PostImage upload error: $e');
       return null;
     }
   }
@@ -93,7 +94,7 @@ class ImageUploadService {
   /// Upload to ImgBB.com (free with API key)
   Future<String?> uploadToImgBB(File imageFile) async {
     try {
-      print('ImgBB: Starting upload...');
+      debugPrint('ImgBB: Starting upload...');
 
       // You can get a free API key from https://api.imgbb.com/
       const String apiKey = 'bdb5c5d0c9d8f4f5e8c1d5c8f0e5c8f0'; // Free demo key
@@ -112,25 +113,25 @@ class ImageUploadService {
         },
       );
 
-      print('ImgBB: Response status ${response.statusCode}');
+      debugPrint('ImgBB: Response status ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
 
         if (responseData['success'] == true) {
           final imageUrl = responseData['data']['url'];
-          print('ImgBB: Upload successful: $imageUrl');
+          debugPrint('ImgBB: Upload successful: $imageUrl');
           return imageUrl;
         } else {
-          print('ImgBB API error: ${responseData['error']['message']}');
+          debugPrint('ImgBB API error: ${responseData['error']['message']}');
           return null;
         }
       } else {
-        print('ImgBB HTTP error: ${response.statusCode} - ${response.body}');
+        debugPrint('ImgBB HTTP error: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('ImgBB upload error: $e');
+      debugPrint('ImgBB upload error: $e');
       return null;
     }
   }
@@ -138,7 +139,7 @@ class ImageUploadService {
   /// Upload to Imgur.com (free, no API key required for anonymous uploads)
   Future<String?> uploadToImgur(File imageFile) async {
     try {
-      print('Imgur: Starting upload...');
+      debugPrint('Imgur: Starting upload...');
 
       final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
@@ -155,25 +156,25 @@ class ImageUploadService {
         body: {'image': base64Image, 'type': 'base64'},
       );
 
-      print('Imgur: Response status ${response.statusCode}');
+      debugPrint('Imgur: Response status ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
 
         if (responseData['success'] == true) {
           final imageUrl = responseData['data']['link'];
-          print('Imgur: Upload successful: $imageUrl');
+          debugPrint('Imgur: Upload successful: $imageUrl');
           return imageUrl;
         } else {
-          print('Imgur API error: ${responseData['data']['error']}');
+          debugPrint('Imgur API error: ${responseData['data']['error']}');
           return null;
         }
       } else {
-        print('Imgur HTTP error: ${response.statusCode} - ${response.body}');
+        debugPrint('Imgur HTTP error: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Imgur upload error: $e');
+      debugPrint('Imgur upload error: $e');
       return null;
     }
   }
@@ -182,7 +183,7 @@ class ImageUploadService {
   /// This uses freeimage.host which doesn't require API key
   Future<String?> uploadToFreeImageHost(File imageFile) async {
     try {
-      print('FreeImage.host: Starting upload...');
+      debugPrint('FreeImage.host: Starting upload...');
       final uri = Uri.parse('https://freeimage.host/api/1/upload');
 
       final request = http.MultipartRequest('POST', uri);
@@ -195,68 +196,68 @@ class ImageUploadService {
       request.files.add(multipartFile);
 
       final response = await request.send();
-      print('FreeImage.host: Response status ${response.statusCode}');
+      debugPrint('FreeImage.host: Response status ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
-        print('FreeImage.host: Response body: $responseBody');
+        debugPrint('FreeImage.host: Response body: $responseBody');
         final responseData = json.decode(responseBody);
 
         if (responseData['status_code'] == 200) {
           final imageUrl = responseData['image']['url'];
-          print('FreeImage.host: Upload successful: $imageUrl');
+          debugPrint('FreeImage.host: Upload successful: $imageUrl');
           return imageUrl;
         } else {
-          print('FreeImage.host error: ${responseData['error']['message']}');
+          debugPrint('FreeImage.host error: ${responseData['error']['message']}');
           return null;
         }
       } else {
-        print('FreeImage.host HTTP error: ${response.statusCode}');
+        debugPrint('FreeImage.host HTTP error: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('FreeImage.host upload error: $e');
+      debugPrint('FreeImage.host upload error: $e');
       return null;
     }
   }
 
   /// Main upload method that tries multiple services as fallbacks
   Future<String?> uploadImageWithFallback(File imageFile) async {
-    print('Starting image upload with fallback...');
+    debugPrint('Starting image upload with fallback...');
 
     // Try Imgur first (most reliable, no API key required)
-    print('Trying Imgur...');
+    debugPrint('Trying Imgur...');
     final imgurUrl = await uploadToImgur(imageFile);
     if (imgurUrl != null) {
-      print('Imgur upload successful: $imgurUrl');
+      debugPrint('Imgur upload successful: $imgurUrl');
       return imgurUrl;
     }
 
     // Try ImgBB with demo API key
-    print('Trying ImgBB...');
+    debugPrint('Trying ImgBB...');
     final imgbbUrl = await uploadToImgBB(imageFile);
     if (imgbbUrl != null) {
-      print('ImgBB upload successful: $imgbbUrl');
+      debugPrint('ImgBB upload successful: $imgbbUrl');
       return imgbbUrl;
     }
 
     // Try FreeImage.host
-    print('Trying FreeImage.host...');
+    debugPrint('Trying FreeImage.host...');
     final freeHostUrl = await uploadToFreeImageHost(imageFile);
     if (freeHostUrl != null) {
-      print('FreeImage.host upload successful: $freeHostUrl');
+      debugPrint('FreeImage.host upload successful: $freeHostUrl');
       return freeHostUrl;
     }
 
     // Try PostImage.org as last option
-    print('Trying PostImage.org...');
+    debugPrint('Trying PostImage.org...');
     final postImageUrl = await uploadToPostImage(imageFile);
     if (postImageUrl != null) {
-      print('PostImage.org upload successful: $postImageUrl');
+      debugPrint('PostImage.org upload successful: $postImageUrl');
       return postImageUrl;
     }
 
-    print('All upload methods failed');
+    debugPrint('All upload methods failed');
     return null;
   }
 }

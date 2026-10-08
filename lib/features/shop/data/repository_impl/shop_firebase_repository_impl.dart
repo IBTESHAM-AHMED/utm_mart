@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:utmmart/features/shop/data/models/product_model.dart';
 import 'package:utmmart/features/shop/data/models/order_model.dart';
@@ -41,7 +42,7 @@ class ShopFirebaseRepositoryImpl implements ShopRepo {
       }
       return null;
     } catch (e) {
-      print('Error getting product: $e');
+      debugPrint('Error getting product: $e');
       return null;
     }
   }
@@ -149,7 +150,7 @@ class ShopFirebaseRepositoryImpl implements ShopRepo {
       }
       return null;
     } catch (e) {
-      print('Error getting order: $e');
+      debugPrint('Error getting order: $e');
       return null;
     }
   }
@@ -241,7 +242,7 @@ class ShopFirebaseRepositoryImpl implements ShopRepo {
           .get();
       return snapshot.count ?? 0;
     } catch (e) {
-      print('Error getting product count: $e');
+      debugPrint('Error getting product count: $e');
       return 0;
     }
   }
@@ -256,7 +257,7 @@ class ShopFirebaseRepositoryImpl implements ShopRepo {
           .get();
       return snapshot.count ?? 0;
     } catch (e) {
-      print('Error getting order count: $e');
+      debugPrint('Error getting order count: $e');
       return 0;
     }
   }
@@ -277,7 +278,7 @@ class ShopFirebaseRepositoryImpl implements ShopRepo {
       }
       return total;
     } catch (e) {
-      print('Error getting total revenue: $e');
+      debugPrint('Error getting total revenue: $e');
       return 0.0;
     }
   }

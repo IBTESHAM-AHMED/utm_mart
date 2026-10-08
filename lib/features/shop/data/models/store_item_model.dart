@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
@@ -61,34 +62,34 @@ class StoreItemModel extends Equatable {
     final data = doc.data() as Map<String, dynamic>;
 
     // Helper function to safely parse timestamps
-    DateTime _parseTimestamp(dynamic timestamp) {
+    DateTime parseTimestamp(dynamic timestamp) {
       if (timestamp == null) {
-        print('⚠️ Timestamp is null, using current time');
+        debugPrint('⚠️ Timestamp is null, using current time');
         return DateTime.now();
       }
 
-      print(
+      debugPrint(
         '🔍 Parsing timestamp: $timestamp (type: ${timestamp.runtimeType})',
       );
 
       if (timestamp is Timestamp) {
-        print('✅ Timestamp object detected');
+        debugPrint('✅ Timestamp object detected');
         return timestamp.toDate();
       } else if (timestamp is String) {
         try {
-          print('✅ String timestamp detected, parsing...');
+          debugPrint('✅ String timestamp detected, parsing...');
           final parsed = DateTime.parse(timestamp);
-          print('✅ Successfully parsed string timestamp: $parsed');
+          debugPrint('✅ Successfully parsed string timestamp: $parsed');
           return parsed;
         } catch (e) {
-          print('❌ Failed to parse timestamp string: $timestamp, error: $e');
+          debugPrint('❌ Failed to parse timestamp string: $timestamp, error: $e');
           return DateTime.now();
         }
       } else if (timestamp is DateTime) {
-        print('✅ DateTime object detected');
+        debugPrint('✅ DateTime object detected');
         return timestamp;
       } else {
-        print(
+        debugPrint(
           '❌ Unknown timestamp type: ${timestamp.runtimeType}, value: $timestamp',
         );
         return DateTime.now();
@@ -106,8 +107,8 @@ class StoreItemModel extends Equatable {
       itemCategory: data['itemCategory'] ?? '',
       buyerUid: data['buyerUid'],
       sellerUid: data['sellerUid'] ?? '',
-      createdAt: _parseTimestamp(data['createdAt']),
-      updatedAt: _parseTimestamp(data['updatedAt']),
+      createdAt: parseTimestamp(data['createdAt']),
+      updatedAt: parseTimestamp(data['updatedAt']),
     );
   }
 

@@ -199,7 +199,7 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
 
                 // Category
                 DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(),
@@ -335,6 +335,7 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Failed to pick image: ${e.toString()}',
@@ -362,6 +363,7 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
 
       // Upload image
       final imageUrl = await _imageUploadService.uploadImage(_selectedImage!);
+      if (!mounted) return;
       if (imageUrl == null) {
         THelperFunctions.showSnackBar(
           context: context,
@@ -375,6 +377,7 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
       // Get current user
       final userResult = await _authService.getCurrentUserDocument();
       final currentUser = userResult.fold((error) => null, (user) => user);
+      if (!mounted) return;
 
       if (currentUser == null) {
         THelperFunctions.showSnackBar(
@@ -400,6 +403,7 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
 
       // Add to Firestore
       final result = await _storeService.addStoreItem(storeItem);
+      if (!mounted) return;
 
       result.fold(
         (error) {
@@ -425,6 +429,7 @@ class _AddStoreItemViewState extends State<AddStoreItemView> {
         },
       );
     } catch (e) {
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Failed to add item: ${e.toString()}',

@@ -172,6 +172,7 @@ class THelperFunctions {
                           ),
                           onPressed: () async {
                             await Geolocator.openLocationSettings();
+                            if (!context.mounted) return;
                             Navigator.of(context).pop(true);
                           },
                         ),

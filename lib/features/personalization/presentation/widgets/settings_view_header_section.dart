@@ -37,7 +37,7 @@ class _SettingsViewHeaderSectionState extends State<SettingsViewHeaderSection> {
     result.fold(
       (error) {
         // Handle error silently or show default data
-        print('Error loading user data: $error');
+        debugPrint('Error loading user data: $error');
       },
       (user) {
         if (mounted) {

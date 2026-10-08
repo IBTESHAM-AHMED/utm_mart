@@ -261,9 +261,8 @@ class _NotificationsViewState extends State<NotificationsView> {
       final auction = await _auctionService.getAuctionById(auctionId);
 
       // Close loading dialog
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
 
       if (auction != null) {
         // Navigate to auction detail view
