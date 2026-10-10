@@ -9,6 +9,8 @@ import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:intl/intl.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
+import 'package:utmmart/features/notifications/data/models/notification_model.dart';
+import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 
 class SellerOrderItem extends StatefulWidget {
   final QueryDocumentSnapshot order;
@@ -21,6 +23,7 @@ class SellerOrderItem extends StatefulWidget {
 
 class _SellerOrderItemState extends State<SellerOrderItem> {
   final FirebaseService _firebaseService = sl<FirebaseService>();
+  final NotificationService _notificationService = NotificationService();
   bool _isUpdating = false;
 
   @override
@@ -307,6 +310,19 @@ class _SellerOrderItemState extends State<SellerOrderItem> {
       await _firebaseService.firestore.collection('orders').doc(orderId).update(
         {'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()},
       );
+
+      final orderData = widget.order.data() as Map<String, dynamic>;
+      final customerId = orderData['customerId'] as String?;
+      if (customerId != null) {
+        await _notificationService.notifyUser(
+          userId: customerId,
+          title: 'Order Status Updated',
+          message:
+              'Your order #${orderId.substring(0, 8)} status has been updated to $newStatus',
+          type: NotificationType.orderStatusChange,
+          data: {'orderId': orderId, 'newStatus': newStatus},
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

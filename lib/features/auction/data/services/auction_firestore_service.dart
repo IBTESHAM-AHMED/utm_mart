@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:utmmart/features/auction/data/models/auction_model.dart';
+import 'package:utmmart/features/notifications/data/models/notification_model.dart';
 import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 
 class AuctionFirestoreService {
@@ -193,6 +194,8 @@ class AuctionFirestoreService {
           .collection('auctions')
           .doc(auctionId);
 
+      late AuctionModel auction;
+
       await _firebaseService.firestore.runTransaction((transaction) async {
         final auctionDoc = await transaction.get(auctionRef);
 
@@ -200,7 +203,7 @@ class AuctionFirestoreService {
           throw Exception('Auction not found');
         }
 
-        final auction = AuctionModel.fromFirestore(auctionDoc);
+        auction = AuctionModel.fromFirestore(auctionDoc);
 
         if (auction.status != 'active') {
           throw Exception('Auction is not active');
@@ -211,40 +214,71 @@ class AuctionFirestoreService {
           'status': 'ended',
           'updatedAt': FieldValue.serverTimestamp(),
         });
-
-        // Create order for highest bidder if there are bids
-        if (auction.bids.isNotEmpty) {
-          final highestBid = auction.highestBid!;
-          await _createOrderFromAuction(auction, highestBid);
-
-          // Notify winner
-          await _notificationService.createAuctionWonNotification(
-            auctionId: auctionId,
-            winnerId: highestBid.bidderUid,
-            auctionTitle: auction.title,
-            winningBid: highestBid.amount,
-          );
-        }
-
-        // Notify all bidders that auction ended
-        for (final bid in auction.bids) {
-          if (auction.bids.isNotEmpty &&
-              bid.bidderUid != auction.highestBid?.bidderUid) {
-            await _notificationService.createAuctionEndedNotification(
-              auctionId: auctionId,
-              bidderId: bid.bidderUid,
-              auctionTitle: auction.title,
-            );
-          }
-        }
       });
+
+      // Everything below runs once, after the transaction committed (the
+      // transaction callback can be retried).
+      final highestBid = auction.bids.isNotEmpty ? auction.highestBid : null;
+      String? orderId;
+
+      if (highestBid != null) {
+        orderId = await _createOrderFromAuction(auction, highestBid);
+
+        // notifyUser never throws, so a notification problem cannot make a
+        // closed auction look like it failed to end.
+        await _notificationService.notifyUser(
+          userId: highestBid.bidderUid,
+          title: 'Congratulations! You Won!',
+          message:
+              'You won the auction for "${auction.title}" with a bid of RM${highestBid.amount.toStringAsFixed(2)}',
+          type: NotificationType.auctionWon,
+          data: {
+            'auctionId': auctionId,
+            'auctionTitle': auction.title,
+            'orderId': orderId,
+          },
+        );
+      }
+
+      // Everyone else who bid
+      final otherBidders = auction.bids
+          .map((b) => b.bidderUid)
+          .where((uid) => uid != highestBid?.bidderUid)
+          .toSet();
+      for (final uid in otherBidders) {
+        await _notificationService.notifyUser(
+          userId: uid,
+          title: 'Auction Ended',
+          message: 'The auction for "${auction.title}" has ended',
+          type: NotificationType.auctionEnded,
+          data: {'auctionId': auctionId, 'auctionTitle': auction.title},
+        );
+      }
+
+      // The seller
+      await _notificationService.notifyUser(
+        userId: auction.sellerUid,
+        title: 'Your Auction Ended',
+        message: highestBid != null
+            ? '"${auction.title}" sold to ${highestBid.bidderName} for RM${highestBid.amount.toStringAsFixed(2)}'
+            : '"${auction.title}" ended with no bids',
+        type: NotificationType.auctionEnded,
+        data: {
+          'auctionId': auctionId,
+          'auctionTitle': auction.title,
+          'orderId': orderId,
+          'asSeller': true,
+          // Sold -> the new order is under Track Order; no bids -> Auction Items
+          'sellerTab': highestBid != null ? 1 : 2,
+        },
+      );
     } catch (e) {
       throw Exception('Failed to end auction: $e');
     }
   }
 
   // Create order from auction for highest bidder
-  Future<void> _createOrderFromAuction(
+  Future<String> _createOrderFromAuction(
     AuctionModel auction,
     BidModel highestBid,
   ) async {
@@ -276,11 +310,14 @@ class AuctionFirestoreService {
         'isAuctionOrder': true,
       };
 
-      await _firebaseService.firestore.collection('orders').add(orderData);
+      final orderRef = await _firebaseService.firestore
+          .collection('orders')
+          .add(orderData);
 
       debugPrint(
         '✅ Order created for auction ${auction.id} - Winner: ${highestBid.bidderName}',
       );
+      return orderRef.id;
     } catch (e) {
       debugPrint('❌ Error creating order from auction: $e');
       throw Exception('Failed to create order from auction: $e');
@@ -314,11 +351,20 @@ class AuctionFirestoreService {
   }
 
   // Get user's bids
-  Stream<QuerySnapshot> getUserBidsStream(String bidderUid) {
+  // Bids are an array of maps inside each auction, which Firestore cannot
+  // query by bidderUid, so we stream recent auctions and filter in the app.
+  Stream<List<AuctionModel>> getUserBidAuctionsStream(String bidderUid) {
     return _firebaseService.firestore
         .collection('auctions')
-        .where('bids', arrayContains: {'bidderUid': bidderUid})
-        .snapshots();
+        .orderBy('endTime', descending: true)
+        .limit(200)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map(AuctionModel.fromFirestore)
+              .where((a) => a.bids.any((b) => b.bidderUid == bidderUid))
+              .toList(),
+        );
   }
 
   // Delete auction

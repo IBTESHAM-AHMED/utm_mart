@@ -12,13 +12,21 @@ import 'package:utmmart/features/auction/data/services/auction_firestore_service
 import 'package:utmmart/features/auction/data/models/auction_model.dart';
 import 'package:utmmart/features/auction/presentation/views/auction_detail_view.dart';
 import 'package:utmmart/features/auction/presentation/views/create_auction_view.dart';
+import 'package:utmmart/features/shop/data/services/order_service.dart';
+import 'package:utmmart/features/shop/presentation/widgets/order_summary_tile.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:intl/intl.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:utmmart/features/notifications/data/models/notification_model.dart';
 import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 
 class SellerDashboardView extends StatefulWidget {
-  const SellerDashboardView({super.key});
+  const SellerDashboardView({super.key, this.initialTab = 0, this.openOrderId});
+
+  final int initialTab;
+
+  /// When set, the order's detail page opens on top of the dashboard.
+  final String? openOrderId;
 
   @override
   State<SellerDashboardView> createState() => _SellerDashboardViewState();
@@ -114,9 +122,63 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTab.clamp(0, 2),
+    );
     _getCurrentUser();
     _startTimer();
+    final openOrderId = widget.openOrderId;
+    if (openOrderId != null) {
+      // Opened from a notification: jump straight to that order's details.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openOrderDetail(openOrderId);
+      });
+    }
+  }
+
+  /// Full order details (with the approve / ship / close actions) on their
+  /// own page; the list only shows compact rows.
+  void _openOrderDetail(String orderId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: CustomAppBar(
+            appBarModel: AppBarModel(
+              hasArrowBack: true,
+              title: const Text('Order Details'),
+            ),
+          ),
+          body: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('orders')
+                .doc(orderId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final doc = snapshot.data!;
+              if (!doc.exists) {
+                return const Center(child: Text('Order not found'));
+              }
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(TSizes.defaultSpace),
+                child: _buildPendingOrderCard(
+                  context,
+                  doc.id,
+                  doc.data() as Map<String, dynamic>,
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _getCurrentUser() async {
@@ -461,7 +523,9 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                         '$formattedDate at $formattedTime',
                         style: Theme.of(
                           context,
-                        ).textTheme.bodySmall?.apply(color: Colors.grey[600]),
+                        ).textTheme.bodySmall?.apply(
+                          color: THelperFunctions.mutedTextColor(context),
+                        ),
                       ),
                     ],
                   ),
@@ -614,7 +678,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
       padding: const EdgeInsets.only(bottom: TSizes.xs),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
+          Icon(icon, size: 16, color: THelperFunctions.mutedTextColor(context)),
           const SizedBox(width: TSizes.sm),
           Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w500)),
           Expanded(
@@ -627,6 +691,8 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
 
   // Build order item row
   Widget _buildOrderItemRow(Map<String, dynamic> item) {
+    final dark = THelperFunctions.isDarkMode(context);
+    final muted = THelperFunctions.mutedTextColor(context);
     final String itemName = item['itemName'] ?? 'Unknown Item';
     final int quantity = item['quantity'] ?? 0;
     final double price = (item['itemPrice'] ?? 0.0).toDouble();
@@ -637,9 +703,11 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
       margin: const EdgeInsets.only(bottom: TSizes.sm),
       padding: const EdgeInsets.all(TSizes.sm),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: dark ? Colors.white.withOpacity(0.06) : Colors.white,
         borderRadius: BorderRadius.circular(TSizes.sm),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(
+          color: dark ? Colors.white24 : Colors.grey.withOpacity(0.2),
+        ),
       ),
       child: Row(
         children: [
@@ -661,10 +729,10 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: dark ? Colors.white12 : Colors.grey[200],
                 borderRadius: BorderRadius.circular(TSizes.sm),
               ),
-              child: const Icon(Icons.image, color: Colors.grey),
+              child: Icon(Icons.image, color: muted),
             ),
 
           const SizedBox(width: TSizes.sm),
@@ -686,7 +754,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                 const SizedBox(height: 2),
                 Text(
                   'Qty: $quantity × RM${price.toStringAsFixed(2)}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(color: muted, fontSize: 12),
                 ),
               ],
             ),
@@ -725,7 +793,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
             style: TextStyle(
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
               fontSize: isTotal ? 18 : 14,
-              color: isTotal ? Colors.blue : Colors.black,
+              color: isTotal ? Colors.blue : null,
             ),
           ),
         ],
@@ -733,8 +801,89 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     );
   }
 
-  // Build status update buttons
+  // Build status update buttons (+ cancel until the buyer has received)
   Widget _buildStatusUpdateButtons(
+    BuildContext context,
+    String orderId,
+    String currentStatus,
+  ) {
+    final canCancel = const [
+      'pending',
+      'approved',
+      'shipped',
+    ].contains(currentStatus);
+    return Column(
+      children: [
+        _buildPrimaryStatusButtons(context, orderId, currentStatus),
+        if (canCancel) ...[
+          const SizedBox(height: TSizes.sm),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _confirmCancelOrder(orderId),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
+                side: const BorderSide(color: Colors.red),
+              ),
+              icon: const Icon(Icons.cancel_outlined, size: 18),
+              label: const Text('Cancel Order'),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _confirmCancelOrder(String orderId) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsOverflowButtonSpacing: 8,
+        title: const Text('Cancel order?'),
+        content: const Text(
+          'The order will be cancelled and its items put back in stock.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Keep order'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await OrderService().cancelOrder(orderId, byBuyer: false);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Order cancelled and stock restored'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Could not cancel: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cancel order'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrimaryStatusButtons(
     BuildContext context,
     String orderId,
     String currentStatus,
@@ -812,6 +961,8 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsOverflowButtonSpacing: 8,
         title: const Text('Confirm Payment'),
         content: const Text(
           'Have you received the cash payment from the customer? This will mark the order as completed and update the payment status to paid.',
@@ -827,6 +978,7 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
               await _confirmPaymentAndCloseOrder(orderId);
             },
             style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
@@ -850,6 +1002,26 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
             'paymentStatus': 'paid',
             'updatedAt': FieldValue.serverTimestamp(),
           });
+
+      try {
+        final closed = await _firebaseService.firestore
+            .collection('orders')
+            .doc(orderId)
+            .get();
+        final customerId = closed.data()?['customerId'] as String?;
+        if (customerId != null) {
+          await _notificationService.notifyUser(
+            userId: customerId,
+            title: 'Order Completed',
+            message:
+                'Your order #${orderId.substring(0, 8)} is completed and payment is confirmed',
+            type: NotificationType.orderStatusChange,
+            data: {'orderId': orderId, 'newStatus': 'closed'},
+          );
+        }
+      } catch (e) {
+        debugPrint('Close-order notification failed: $e');
+      }
 
       debugPrint('✅ Order closed and payment confirmed successfully');
 
@@ -1703,11 +1875,9 @@ class _SellerDashboardViewState extends State<SellerDashboardView>
                               itemCount: filteredOrders.length,
                               itemBuilder: (context, index) {
                                 final doc = filteredOrders[index];
-                                final data = doc.data() as Map<String, dynamic>;
-                                return _buildPendingOrderCard(
-                                  context,
-                                  doc.id,
-                                  data,
+                                return OrderSummaryTile(
+                                  order: doc,
+                                  onTap: () => _openOrderDetail(doc.id),
                                 );
                               },
                             );

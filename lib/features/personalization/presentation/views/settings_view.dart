@@ -9,6 +9,7 @@ import 'package:utmmart/features/personalization/presentation/views/user_address
 import 'package:utmmart/features/personalization/presentation/widgets/account_settings_section.dart';
 import 'package:utmmart/features/personalization/presentation/widgets/app_settings_section.dart';
 import 'package:utmmart/features/personalization/presentation/widgets/settings_view_header_section.dart';
+import 'package:utmmart/features/auction/presentation/views/my_bids_view.dart';
 import 'package:utmmart/features/shop/presentation/views/orders_view.dart';
 import 'package:utmmart/features/shop/presentation/views/seller_dashboard_view.dart';
 import 'package:utmmart/features/shop/presentation/views/cart_view.dart';
@@ -68,6 +69,14 @@ class SettingsView extends StatelessWidget {
         title: "My Cart",
         subtitle: "Add, Remove Products And Move To Checkout",
         leading: Iconsax.shopping_cart,
+      ),
+      SettingsMenuTileModel(
+        onTap: () {
+          THelperFunctions.navigateToScreen(context, const MyBidsView());
+        },
+        title: "My Bids",
+        subtitle: "Track your live and past auction bids",
+        leading: Iconsax.timer_1,
       ),
       SettingsMenuTileModel(
         onTap: () {

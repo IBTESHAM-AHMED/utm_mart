@@ -7,7 +7,10 @@ import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:utmmart/features/notifications/data/models/notification_model.dart';
 import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 import 'package:utmmart/features/notifications/presentation/widgets/notification_item.dart';
+import 'package:utmmart/features/shop/presentation/views/order_detail_view.dart';
 import 'package:utmmart/features/shop/presentation/views/orders_view.dart';
+import 'package:utmmart/features/shop/presentation/views/seller_dashboard_view.dart'
+    hide SellerOrderCategory, SellerOrderStatusFilter;
 import 'package:utmmart/features/auction/presentation/views/auction_detail_view.dart';
 import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
@@ -218,14 +221,39 @@ class _NotificationsViewState extends State<NotificationsView> {
   }
 
   void _handleNotificationTap(NotificationModel notification) {
+    // Notifications meant for the seller carry the dashboard tab to open.
+    final data = notification.data;
+    final sellerTab = data?['sellerTab'];
+    final orderId = data?['orderId'];
+    if (data?['asSeller'] == true || sellerTab is int) {
+      THelperFunctions.navigateToScreen(
+        context,
+        SellerDashboardView(
+          initialTab: sellerTab is int ? sellerTab : 1,
+          openOrderId: orderId is String ? orderId : null,
+        ),
+      );
+      return;
+    }
+    if (orderId is String) {
+      // The user's own order: open exactly that one.
+      THelperFunctions.navigateToScreen(
+        context,
+        OrderDetailView(orderId: orderId),
+      );
+      return;
+    }
     switch (notification.type) {
       case NotificationType.orderStatusChange:
       case NotificationType.orderWaitingApproval:
         // Navigate to orders view
         THelperFunctions.navigateToScreen(context, const OrdersView());
         break;
-      case NotificationType.auctionOutbid:
       case NotificationType.auctionWon:
+        // The winner's order was created when the auction ended
+        THelperFunctions.navigateToScreen(context, const OrdersView());
+        break;
+      case NotificationType.auctionOutbid:
       case NotificationType.auctionEnded:
       case NotificationType.auctionCreated:
         // Navigate to auction detail view

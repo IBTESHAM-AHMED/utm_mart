@@ -11,6 +11,7 @@ import 'package:utmmart/features/auction/data/models/auction_model.dart';
 import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
 import 'package:utmmart/features/auction/presentation/views/create_auction_view.dart';
 import 'package:utmmart/features/auction/presentation/views/auction_detail_view.dart';
+import 'package:utmmart/features/auction/presentation/widgets/my_bids_button.dart';
 
 class AuctionView extends StatefulWidget {
   const AuctionView({super.key});
@@ -104,6 +105,13 @@ class _AuctionViewState extends State<AuctionView> {
         appBarModel: AppBarModel(
           hasArrowBack: true,
           title: const Text('Auctions'),
+          actions: [
+            MyBidsButton(
+              iconColor: THelperFunctions.isDarkMode(context)
+                  ? TColors.white
+                  : TColors.dark,
+            ),
+          ],
         ),
       ),
       body: Column(

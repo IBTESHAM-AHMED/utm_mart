@@ -25,14 +25,13 @@ service cloud.firestore {
       allow update: if signedIn() && (
         // The seller can edit their own item freely.
         resource.data.sellerUid == request.auth.uid
-        // Anyone else (a buyer at checkout / order receipt) may only LOWER
-        // the stock count, and nothing else on the document.
+        // Anyone else may only change the stock count (lowered at checkout,
+        // raised again when an order is cancelled) and nothing else.
         || (
           request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['itemStock', 'updatedAt'])
           && request.resource.data.itemStock is number
           && request.resource.data.itemStock >= 0
-          && request.resource.data.itemStock <= resource.data.itemStock
         )
       );
 
@@ -81,7 +80,7 @@ service cloud.firestore {
           || request.auth.uid in resource.data.sellerUids
         )
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'paymentStatus', 'updatedAt']);
+          .hasOnly(['status', 'paymentStatus', 'updatedAt', 'stockRestored']);
 
       allow delete: if signedIn()
         && request.auth.uid == resource.data.customerId;
