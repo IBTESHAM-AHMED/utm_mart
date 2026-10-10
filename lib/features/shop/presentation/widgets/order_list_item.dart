@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:utmmart/features/notifications/data/models/notification_model.dart';
+import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
+import 'package:utmmart/features/shop/data/services/order_service.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OrderListItem extends StatefulWidget {
-  final QueryDocumentSnapshot order;
+  final DocumentSnapshot order;
 
   const OrderListItem({super.key, required this.order});
 
@@ -19,6 +22,7 @@ class OrderListItem extends StatefulWidget {
 
 class _OrderListItemState extends State<OrderListItem> {
   final FirebaseService _firebaseService = sl<FirebaseService>();
+  final NotificationService _notificationService = NotificationService();
   Map<String, String?>? _vendorInfo;
   Map<String, String?>? _customerInfo;
 
@@ -497,11 +501,33 @@ class _OrderListItemState extends State<OrderListItem> {
                       ),
                       icon: const Icon(Icons.check_circle, size: 16),
                       label: const Text(
-                        'Confirm',
+                        'Received',
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
+                if (status == 'shipped') ...[
+                  const SizedBox(width: TSizes.xs),
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showReturnConfirmation(context, orderId),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: TSizes.sm,
+                          vertical: TSizes.sm,
+                        ),
+                      ),
+                      icon: const Icon(Icons.undo, size: 16),
+                      label: const Text(
+                        'Return',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -625,14 +651,66 @@ class _OrderListItemState extends State<OrderListItem> {
     );
   }
 
+  // Buyer didn't like the shipped item: cancel and send it back
+  void _showReturnConfirmation(BuildContext context, String orderId) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsOverflowButtonSpacing: 8,
+        title: const Text('Cancel and return?'),
+        content: const Text(
+          'The order will be cancelled and you hand the item back to the seller.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Keep order'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await OrderService().cancelOrder(orderId, byBuyer: true);
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Order cancelled'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(
+                    content: Text('Could not cancel: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cancel order'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Show confirmation dialog for received orders
   void _showReceiveConfirmation(BuildContext context, String orderId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsOverflowButtonSpacing: 8,
         title: const Text('Confirm Received'),
         content: const Text(
-          'Have you received this order? This will mark the order as received and close it.',
+          'Have you received this order? The seller will then confirm your cash payment to complete it.',
         ),
         actions: [
           TextButton(
@@ -645,6 +723,7 @@ class _OrderListItemState extends State<OrderListItem> {
               await _confirmReceived(orderId);
             },
             style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
@@ -663,6 +742,22 @@ class _OrderListItemState extends State<OrderListItem> {
       await _firebaseService.firestore.collection('orders').doc(orderId).update(
         {'status': 'received', 'updatedAt': FieldValue.serverTimestamp()},
       );
+
+      final orderData = widget.order.data() as Map<String, dynamic>;
+      final sellerIds = <String>{
+        if (orderData['sellerUid'] is String) orderData['sellerUid'] as String,
+        ...((orderData['sellerUids'] as List?) ?? const []).whereType<String>(),
+      };
+      for (final sellerId in sellerIds) {
+        await _notificationService.notifyUser(
+          userId: sellerId,
+          title: 'Order Received',
+          message:
+              'The customer confirmed order #${orderId.substring(0, 8)} as received',
+          type: NotificationType.orderStatusChange,
+          data: {'orderId': orderId, 'newStatus': 'received', 'sellerTab': 1, 'asSeller': true},
+        );
+      }
 
       debugPrint('✅ Order status updated to received');
 
