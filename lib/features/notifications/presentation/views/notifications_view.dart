@@ -254,6 +254,7 @@ class _NotificationsViewState extends State<NotificationsView> {
         THelperFunctions.navigateToScreen(context, const OrdersView());
         break;
       case NotificationType.auctionOutbid:
+      case NotificationType.auctionNewBid:
       case NotificationType.auctionEnded:
       case NotificationType.auctionCreated:
         // Navigate to auction detail view
