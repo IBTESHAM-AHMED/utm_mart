@@ -8,8 +8,9 @@ class FirebaseRegisterUsecase
     extends UseCase<Either<String, User>, FirebaseRegisterParams> {
   @override
   Future<Either<String, User>> call({FirebaseRegisterParams? param}) async {
-    if (param == null)
+    if (param == null) {
       throw ArgumentError('FirebaseRegisterParams cannot be null');
+    }
 
     return await sl<FirebaseAuthService>().registerWithEmailAndPassword(
       email: param.email,

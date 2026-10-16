@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
-import 'package:utmmart/features/shop/presentation/widgets/order_list_item.dart';
+import 'package:utmmart/core/utils/helpers/helper_functions.dart';
+import 'package:utmmart/features/shop/presentation/views/order_detail_view.dart';
+import 'package:utmmart/features/shop/presentation/widgets/order_summary_tile.dart';
 
 class OrdersList extends StatelessWidget {
   final List<QueryDocumentSnapshot> orders;
@@ -10,15 +12,19 @@ class OrdersList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      shrinkWrap: true,
+    return ListView.builder(
+      padding: const EdgeInsets.all(TSizes.defaultSpace),
+      itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
-        return OrderListItem(order: order);
+        return OrderSummaryTile(
+          order: order,
+          onTap: () => THelperFunctions.navigateToScreen(
+            context,
+            OrderDetailView(orderId: order.id),
+          ),
+        );
       },
-      separatorBuilder: (context, index) =>
-          const SizedBox(height: TSizes.spaceBtwItems),
-      itemCount: orders.length,
     );
   }
 }

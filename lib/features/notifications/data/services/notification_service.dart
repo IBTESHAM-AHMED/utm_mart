@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:utmmart/features/notifications/data/models/notification_model.dart';
 
 class NotificationService {
@@ -76,6 +77,33 @@ class NotificationService {
         .collection(_collection)
         .doc(notification.id)
         .set(notification.toFirestore());
+  }
+
+  /// Creates a notification for [userId]. Never throws: a failed notification
+  /// must not make the action that triggered it look failed.
+  Future<void> notifyUser({
+    required String userId,
+    required String title,
+    required String message,
+    NotificationType type = NotificationType.general,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      await createNotification(
+        NotificationModel(
+          id: '${DateTime.now().microsecondsSinceEpoch}_${type.name}_$userId',
+          userId: userId,
+          title: title,
+          message: message,
+          type: type,
+          status: NotificationStatus.unread,
+          createdAt: DateTime.now(),
+          data: data,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Notification to $userId failed: $e');
+    }
   }
 
   // Create order status change notification

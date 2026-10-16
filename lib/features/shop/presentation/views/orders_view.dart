@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/common/view_models/app_bar_view_model.dart';
 import 'package:utmmart/core/common/widgets/app_bar.dart';
@@ -77,7 +78,7 @@ class _OrdersViewState extends State<OrdersView>
                         controller: _tabController,
                         isScrollable: false,
                         labelColor: Theme.of(context).primaryColor,
-                        unselectedLabelColor: Colors.grey[600],
+                        unselectedLabelColor: THelperFunctions.mutedTextColor(context),
                         indicatorColor: Theme.of(context).primaryColor,
                         indicatorSize: TabBarIndicatorSize.label,
                         labelStyle: const TextStyle(
@@ -230,12 +231,18 @@ class _OrdersViewState extends State<OrdersView>
           vertical: TSizes.sm,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
+          color: isSelected
+              ? Theme.of(context).primaryColor
+              : (THelperFunctions.isDarkMode(context)
+                    ? Colors.white12
+                    : Colors.grey[200]),
           borderRadius: BorderRadius.circular(TSizes.lg),
           border: Border.all(
             color: isSelected
                 ? Theme.of(context).primaryColor
-                : Colors.grey[300]!,
+                : (THelperFunctions.isDarkMode(context)
+                      ? Colors.white24
+                      : Colors.grey[300]!),
           ),
         ),
         child: Row(
@@ -244,13 +251,17 @@ class _OrdersViewState extends State<OrdersView>
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.white : Colors.grey[600],
+              color: isSelected
+                  ? Colors.white
+                  : THelperFunctions.mutedTextColor(context),
             ),
             const SizedBox(width: TSizes.xs),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[600],
+                color: isSelected
+                  ? Colors.white
+                  : THelperFunctions.mutedTextColor(context),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 fontSize: 14,
               ),
@@ -359,14 +370,17 @@ class _OrdersViewState extends State<OrdersView>
           const SizedBox(height: TSizes.spaceBtwItems),
           Text(
             isFiltered ? 'No orders match your filters' : 'No orders found',
-            style: const TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 18,
+              color: THelperFunctions.mutedTextColor(context),
+            ),
           ),
           const SizedBox(height: TSizes.spaceBtwItems / 2),
           Text(
             isFiltered
                 ? 'Try adjusting your filter criteria'
                 : 'Your orders will appear here',
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: THelperFunctions.mutedTextColor(context)),
           ),
           if (isFiltered) ...[
             const SizedBox(height: TSizes.spaceBtwItems),

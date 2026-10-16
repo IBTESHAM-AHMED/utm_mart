@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:utmmart/features/shop/data/models/cart_item_model.dart';
 import 'package:utmmart/features/shop/data/models/store_item_model.dart';
@@ -15,11 +17,24 @@ import 'package:utmmart/features/shop/data/models/store_item_model.dart';
 /// - removeFromCart(String itemId): Future<bool>
 /// - clearCart(): Future<bool>
 class CartService {
-  static const _kCartKey = 'cart_items';
+  static const _kCartKeyPrefix = 'cart_items';
 
   final SharedPreferences _prefs;
 
   CartService(this._prefs);
+
+  /// Item count of the current user's cart. Updated on every change so badges
+  /// can listen instead of polling. Call [refreshItemCount] after a login switch.
+  final ValueNotifier<int> itemCount = ValueNotifier<int>(0);
+
+  Future<void> refreshItemCount() async {
+    itemCount.value = await getCartItemCount();
+  }
+
+  /// One cart per signed-in user. Read on every call (this service is a
+  /// singleton that outlives logins), so switching accounts switches carts.
+  String get _kCartKey =>
+      '${_kCartKeyPrefix}_${FirebaseAuth.instance.currentUser?.uid ?? 'guest'}';
 
   Future<List<CartItemModel>> getCartItems() async {
     final jsonString = _prefs.getString(_kCartKey);
@@ -30,7 +45,8 @@ class CartService {
       return decoded
           .map((e) => CartItemModel.fromJson(Map<String, dynamic>.from(e)))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CartService: failed to read cart, treating as empty: $e');
       return [];
     }
   }
@@ -69,7 +85,7 @@ class CartService {
       await _saveItems(items);
       return true;
     } catch (e) {
-      // ignore and return false
+      debugPrint('CartService: addToCart failed: $e');
       return false;
     }
   }
@@ -88,7 +104,8 @@ class CartService {
 
       await _saveItems(items);
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CartService: updateQuantity failed: $e');
       return false;
     }
   }
@@ -99,7 +116,8 @@ class CartService {
       items.removeWhere((i) => i.itemId == itemId);
       await _saveItems(items);
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CartService: removeFromCart failed: $e');
       return false;
     }
   }
@@ -107,8 +125,10 @@ class CartService {
   Future<bool> clearCart() async {
     try {
       await _prefs.remove(_kCartKey);
+      itemCount.value = 0;
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CartService: clearCart failed: $e');
       return false;
     }
   }
@@ -116,5 +136,6 @@ class CartService {
   Future<void> _saveItems(List<CartItemModel> items) async {
     final encoded = json.encode(items.map((e) => e.toJson()).toList());
     await _prefs.setString(_kCartKey, encoded);
+    itemCount.value = items.fold<int>(0, (sum, item) => sum + item.quantity);
   }
 }

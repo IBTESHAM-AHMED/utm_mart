@@ -2,95 +2,153 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can read any user's profile (for contact info), but only write their own
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Users can read any user's profile (sellers need buyer contact info),
+    // but can only create/modify their own.
     match /users/{userId} {
-      allow read: if request.auth != null; // Any authenticated user can read any user's profile
-      allow write: if request.auth != null && request.auth.uid == userId; // Only own user can write
-      allow create: if request.auth != null && request.auth.uid == userId; // Only own user can create
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == userId;
     }
-    
-    // Store collection - for marketplace items
+
+    // Store collection - marketplace items.
     match /store/{itemId} {
-      allow read: if true; // Anyone can read store items
-      allow create: if request.auth != null; // Authenticated users can add items
-      allow update: if request.auth != null; // Allow any authenticated user to update (for stock updates)
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.sellerUid; // Only item owner can delete
+      allow read: if true;
+
+      // Items can only be created in your own name.
+      allow create: if signedIn()
+        && request.resource.data.sellerUid == request.auth.uid;
+
+      allow update: if signedIn() && (
+        // The seller can edit their own item freely.
+        resource.data.sellerUid == request.auth.uid
+        // Anyone else may only change the stock count (lowered at checkout,
+        // raised again when an order is cancelled) and nothing else.
+        || (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['itemStock', 'updatedAt'])
+          && request.resource.data.itemStock is number
+          && request.resource.data.itemStock >= 0
+        )
+      );
+
+      allow delete: if signedIn()
+        && request.auth.uid == resource.data.sellerUid;
     }
-    
-    // Products collection - for future use
+
+    // Products collection (legacy). Owned by vendorId.
     match /products/{productId} {
-      allow read: if true; // Anyone can read products
-      allow write: if request.auth != null; // Only authenticated users can write
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.vendorId == request.auth.uid;
+      allow update, delete: if signedIn()
+        && resource.data.vendorId == request.auth.uid;
     }
-    
-    // Orders collection - for order management
+
+    // Orders.
+    // Parties to an order: the customer, the seller (top-level sellerUid),
+    // and every seller listed in sellerUids (carts can contain several sellers).
     match /orders/{orderId} {
-      // Allow read if user is the customer OR if user is authenticated (for seller access)
-      allow read: if request.auth != null;
-      
-      // Allow create if user is the customer placing the order OR if it's an auction order
-      allow create: if request.auth != null && (
-        request.auth.uid == request.resource.data.customerId ||
-        request.resource.data.isAuctionOrder == true
+      allow read: if signedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.sellerUid == request.auth.uid
+        || request.auth.uid in resource.data.sellerUids
       );
-      
-      // Allow update if user is authenticated (for seller updates)
-      allow update: if request.auth != null;
-      
-      // Allow delete only by the customer who placed the order
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.customerId;
+
+      // A customer places their own order. Auction orders are created for the
+      // winning bidder by whichever client ends the auction, so they are
+      // allowed with the auction marker; both must start as 'pending'.
+      allow create: if signedIn()
+        && request.resource.data.status == 'pending'
+        && (
+          request.resource.data.customerId == request.auth.uid
+          || (
+            request.resource.data.isAuctionOrder == true
+            && request.resource.data.sellerUid is string
+          )
+        );
+
+      // Only the parties to the order may change its progress, and only the
+      // status fields - never the customer, seller, items or amounts.
+      allow update: if signedIn()
+        && (
+          resource.data.customerId == request.auth.uid
+          || resource.data.sellerUid == request.auth.uid
+          || request.auth.uid in resource.data.sellerUids
+        )
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'paymentStatus', 'updatedAt', 'stockRestored']);
+
+      allow delete: if signedIn()
+        && request.auth.uid == resource.data.customerId;
     }
-    
-    // Categories collection - for future use
+
+    // Categories (legacy). Owned by vendorId.
     match /categories/{categoryId} {
-      allow read: if true; // Anyone can read categories
-      allow write: if request.auth != null; // Only authenticated users can write
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.vendorId == request.auth.uid;
+      allow update, delete: if signedIn()
+        && resource.data.vendorId == request.auth.uid;
     }
-    
-    // Addresses collection - for user addresses
+
+    // Addresses - private to their owner.
     match /addresses/{addressId} {
-      // Allow read if user is the owner of the address
-      allow read: if request.auth != null && 
-        request.auth.uid == resource.data.userUid;
-      
-      // Allow create if user is creating their own address
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userUid;
-      
-      // Allow update if user is the owner of the address
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.userUid;
-      
-      // Allow delete if user is the owner of the address
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.userUid;
+      allow read: if signedIn() && request.auth.uid == resource.data.userUid;
+      allow create: if signedIn()
+        && request.auth.uid == request.resource.data.userUid;
+      allow update: if signedIn() && request.auth.uid == resource.data.userUid;
+      allow delete: if signedIn() && request.auth.uid == resource.data.userUid;
     }
-    
-    // Auctions collection - for auction listings
+
+    // Auctions.
     match /auctions/{auctionId} {
-      // Allow read if user is authenticated
-      allow read: if request.auth != null;
-      
-      // Allow create if user is authenticated and is the seller
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.sellerUid;
-      
-      // Allow update if user is the seller or any authenticated user (for bidding)
-      allow update: if request.auth != null && (
-        request.auth.uid == resource.data.sellerUid ||
-        // Allow bidding (updating currentBid and bids array)
-        (request.resource.data.keys().hasAll(['currentBid', 'bids', 'updatedAt']) &&
-         request.resource.data.currentBid > resource.data.currentBid) ||
-        // Allow status updates (for ending auctions)
-        (request.resource.data.keys().hasAll(['status', 'updatedAt']) &&
-         request.resource.data.status == 'ended')
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.auth.uid == request.resource.data.sellerUid;
+
+      allow update: if signedIn() && (
+        // The seller manages their own auction.
+        resource.data.sellerUid == request.auth.uid
+
+        // Anyone can place a higher bid while the auction is open. Only the
+        // bid fields (and an optional move to 'ended') may change.
+        || (
+          resource.data.status == 'active'
+          && request.time < resource.data.endTime
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['currentBid', 'bids', 'updatedAt', 'status'])
+          && request.resource.data.currentBid > resource.data.currentBid
+          && (
+            request.resource.data.status == resource.data.status
+            || request.resource.data.status == 'ended'
+          )
+        )
+
+        // Anyone viewing an auction past its end time can close it.
+        || (
+          request.time >= resource.data.endTime
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'updatedAt'])
+          && request.resource.data.status == 'ended'
+        )
       );
-      
-      // Allow delete if user is the seller
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.sellerUid;
+
+      allow delete: if signedIn()
+        && request.auth.uid == resource.data.sellerUid;
+    }
+
+    // Notifications. Created by whichever client triggers the event (e.g. an
+    // outbid notice goes to ANOTHER user), but only the owner can read/change.
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && request.auth.uid == resource.data.userId;
+      allow create: if signedIn();
+      allow update: if signedIn() && request.auth.uid == resource.data.userId;
+      allow delete: if signedIn() && request.auth.uid == resource.data.userId;
     }
   }
 }

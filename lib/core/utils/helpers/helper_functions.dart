@@ -172,6 +172,7 @@ class THelperFunctions {
                           ),
                           onPressed: () async {
                             await Geolocator.openLocationSettings();
+                            if (!context.mounted) return;
                             Navigator.of(context).pop(true);
                           },
                         ),
@@ -448,6 +449,14 @@ class THelperFunctions {
     LoggerHelper.info("Is dark mode: $isDark");
     return isDark;
   }
+
+  /// Secondary (de-emphasised) text colour that stays readable on the current
+  /// surface. [TColors.grey] is #E0E0E0: almost invisible on white, and on dark
+  /// it is too close to the white titles, so dark mode uses a softer #B0B0B0.
+  static Color mutedTextColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFFB0B0B0)
+      : TColors.textSecondary;
 
   static Size screenSize(BuildContext context) {
     Size size = MediaQuery.of(context).size;

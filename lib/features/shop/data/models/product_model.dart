@@ -21,9 +21,13 @@ class ProductModel extends ProductEntity {
   @override
   final double rating;
   final int reviewCount;
+  @override
   final String vendorId; // User ID of the seller who owns this product
+  @override
   final String? vendorName; // Display name of the seller
+  @override
   final String? vendorEmail; // Email of the seller
+  @override
   final String? vendorPhone; // Phone of the seller
   @override
   final DateTime createdAt;

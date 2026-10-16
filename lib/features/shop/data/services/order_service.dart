@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/features/auth/data/models/firestore_user_model.dart';
 import 'package:utmmart/features/shop/data/models/cart_item_model.dart';
 import 'package:utmmart/features/shop/data/services/store_firestore_service.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
+import 'package:utmmart/features/notifications/data/models/notification_model.dart';
 import 'package:utmmart/features/notifications/data/services/notification_service.dart';
 
 class OrderService {
@@ -28,6 +30,8 @@ class OrderService {
         'customerEmail': customer.email,
         'customerPhone': customer.phoneNumber,
         'sellerUid': cartItems.first.sellerUid,
+        // Every seller in the cart, so each can query/read their orders.
+        'sellerUids': cartItems.map((item) => item.sellerUid).toSet().toList(),
         'items': cartItems
             .map(
               (item) => {
@@ -60,11 +64,33 @@ class OrderService {
       final orderNumber = orderId.substring(0, 8);
 
       // Create notification for customer about order waiting for approval
-      await _notificationService.createOrderWaitingApprovalNotification(
-        orderId: orderId,
-        customerId: customer.uid,
-        orderNumber: orderNumber,
-      );
+      try {
+        await _notificationService.createOrderWaitingApprovalNotification(
+          orderId: orderId,
+          customerId: customer.uid,
+          orderNumber: orderNumber,
+        );
+      } catch (e) {
+        debugPrint('Customer order notification failed: $e');
+      }
+
+      // Tell every seller in the cart about the new order
+      for (final sellerUid in cartItems.map((i) => i.sellerUid).toSet()) {
+        if (sellerUid == customer.uid) continue;
+        await _notificationService.notifyUser(
+          userId: sellerUid,
+          title: 'New Order Received',
+          message:
+              'You have a new order #$orderNumber from ${customer.fullName}',
+          type: NotificationType.orderStatusChange,
+          data: {
+            'orderId': orderId,
+            'orderNumber': orderNumber,
+            'sellerTab': 1,
+            'asSeller': true,
+          },
+        );
+      }
 
       // Update stock for each item
       for (final cartItem in cartItems) {
@@ -73,7 +99,7 @@ class OrderService {
 
       return true;
     } catch (e) {
-      print('Error creating order: $e');
+      debugPrint('Error creating order: $e');
       return false;
     }
   }
@@ -92,12 +118,80 @@ class OrderService {
           'itemStock': newStock < 0 ? 0 : newStock, // Prevent negative stock
         });
 
-        print(
+        debugPrint(
           'Updated stock for item $itemId: $currentStock -> ${newStock < 0 ? 0 : newStock}',
         );
       }
     } catch (e) {
-      print('Error updating stock for item $itemId: $e');
+      debugPrint('Error updating stock for item $itemId: $e');
+    }
+  }
+
+  /// Cancels an order and puts its stock back.
+  ///
+  /// The seller may cancel until the buyer has received the order; the buyer
+  /// may only cancel once it has shipped (to send the item back). The
+  /// `stockRestored` flag makes the restore happen at most once.
+  Future<void> cancelOrder(String orderId, {required bool byBuyer}) async {
+    final orderRef = _firestore.collection(_ordersCollection).doc(orderId);
+    late Map<String, dynamic> order;
+
+    await _firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(orderRef);
+      if (!snap.exists) throw Exception('Order not found');
+      order = snap.data()!;
+
+      final status = order['status'] ?? 'pending';
+      final allowed = byBuyer
+          ? status == 'shipped'
+          : const ['pending', 'approved', 'shipped'].contains(status);
+      if (!allowed) {
+        throw Exception('This order can no longer be cancelled ($status)');
+      }
+      if (order['stockRestored'] == true) return;
+
+      transaction.update(orderRef, {
+        'status': 'cancelled',
+        'stockRestored': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Auction orders do not reserve store stock.
+      if (order['isAuctionOrder'] != true) {
+        for (final item in (order['items'] as List? ?? [])) {
+          final itemId = item['itemId'];
+          if (itemId is! String || itemId.isEmpty) continue;
+          transaction.update(_firestore.collection('store').doc(itemId), {
+            'itemStock': FieldValue.increment(item['quantity'] ?? 1),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+      }
+    });
+
+    final number = orderId.substring(0, 8);
+    if (byBuyer) {
+      final sellers = <String>{
+        if (order['sellerUid'] is String) order['sellerUid'] as String,
+        ...((order['sellerUids'] as List?) ?? []).whereType<String>(),
+      };
+      for (final sellerUid in sellers) {
+        await _notificationService.notifyUser(
+          userId: sellerUid,
+          title: 'Order Cancelled',
+          message: 'The buyer cancelled order #$number and is returning the item',
+          type: NotificationType.orderStatusChange,
+          data: {'orderId': orderId, 'newStatus': 'cancelled', 'asSeller': true},
+        );
+      }
+    } else if (order['customerId'] is String) {
+      await _notificationService.notifyUser(
+        userId: order['customerId'] as String,
+        title: 'Order Cancelled',
+        message: 'The seller cancelled your order #$number',
+        type: NotificationType.orderStatusChange,
+        data: {'orderId': orderId, 'newStatus': 'cancelled'},
+      );
     }
   }
 
@@ -118,7 +212,7 @@ class OrderService {
         return data;
       }).toList();
     } catch (e) {
-      print('Error getting customer orders: $e');
+      debugPrint('Error getting customer orders: $e');
       return [];
     }
   }
@@ -138,7 +232,7 @@ class OrderService {
         return data;
       }).toList();
     } catch (e) {
-      print('Error getting seller orders: $e');
+      debugPrint('Error getting seller orders: $e');
       return [];
     }
   }
@@ -152,7 +246,7 @@ class OrderService {
       });
       return true;
     } catch (e) {
-      print('Error updating order status: $e');
+      debugPrint('Error updating order status: $e');
       return false;
     }
   }

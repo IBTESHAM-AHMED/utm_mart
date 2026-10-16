@@ -34,7 +34,8 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
   final _startingPriceController = TextEditingController();
 
   String _selectedCategory = 'Electronics';
-  DateTime _endTime = DateTime.now().add(const Duration(days: 7));
+  // TEMP-TEST: revert to Duration(days: 7)
+  DateTime _endTime = DateTime.now().add(const Duration(minutes: 5));
   FirestoreUserModel? _currentUser;
   bool _isSubmitting = false;
   File? _selectedImage;
@@ -157,7 +158,10 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
                         const SizedBox(height: 4),
                         Text(
                           'Required',
-                          style: TextStyle(color: TColors.grey, fontSize: 12),
+                          style: TextStyle(
+                            color: THelperFunctions.mutedTextColor(context),
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -187,6 +191,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
 
       // Upload image
       final imageUrl = await _imageUploadService.uploadImage(_selectedImage!);
+      if (!mounted) return;
       if (imageUrl == null) {
         THelperFunctions.showSnackBar(
           context: context,
@@ -200,6 +205,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
       // Get current user
       final userResult = await _authService.getCurrentUserDocument();
       final currentUser = userResult.fold((error) => null, (user) => user);
+      if (!mounted) return;
 
       if (currentUser == null) {
         THelperFunctions.showSnackBar(
@@ -232,6 +238,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
 
       // Add to Firestore
       await _auctionService.createAuction(auction);
+      if (!mounted) return;
 
       THelperFunctions.showSnackBar(
         context: context,
@@ -246,6 +253,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
         }
       });
     } catch (e) {
+      if (!mounted) return;
       THelperFunctions.showSnackBar(
         context: context,
         message: 'Failed to create auction: ${e.toString()}',
@@ -319,7 +327,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
 
               // Category
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),
@@ -368,24 +376,33 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
                   final date = await showDatePicker(
                     context: context,
                     initialDate: _endTime,
-                    firstDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(), // TEMP-TEST: revert to .add(const Duration(days: 1))
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                   );
+                  if (!mounted) return;
                   if (date != null) {
                     final time = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(_endTime),
                     );
                     if (time != null) {
-                      setState(() {
-                        _endTime = DateTime(
-                          date.year,
-                          date.month,
-                          date.day,
-                          time.hour,
-                          time.minute,
+                      final picked = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        time.hour,
+                        time.minute,
+                      );
+                      // TEMP-TEST: same-day end times need this guard
+                      if (!picked.isAfter(DateTime.now())) {
+                        THelperFunctions.showSnackBar(
+                          context: context,
+                          message: 'End time must be in the future',
+                          type: SnackBarType.error,
                         );
-                      });
+                        return;
+                      }
+                      setState(() => _endTime = picked);
                     }
                   }
                 },

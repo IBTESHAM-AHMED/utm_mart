@@ -251,14 +251,16 @@ class _StoreViewState extends State<StoreView> {
             'No items in store yet',
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(color: TColors.grey),
+            ).textTheme.headlineSmall?.copyWith(
+              color: THelperFunctions.mutedTextColor(context),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Tap the + button to add your first item',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: TColors.grey),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: THelperFunctions.mutedTextColor(context),
+            ),
           ),
         ],
       ),
@@ -339,9 +341,9 @@ class _StoreViewState extends State<StoreView> {
                     // Item Description
                     Text(
                       item.itemDescription,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: TColors.grey),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: THelperFunctions.mutedTextColor(context),
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

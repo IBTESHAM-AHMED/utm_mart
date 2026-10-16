@@ -11,6 +11,7 @@ import 'package:utmmart/features/auction/data/models/auction_model.dart';
 import 'package:utmmart/features/auction/data/services/auction_firestore_service.dart';
 import 'package:utmmart/features/auction/presentation/views/create_auction_view.dart';
 import 'package:utmmart/features/auction/presentation/views/auction_detail_view.dart';
+import 'package:utmmart/features/auction/presentation/widgets/my_bids_button.dart';
 
 class AuctionView extends StatefulWidget {
   const AuctionView({super.key});
@@ -26,7 +27,7 @@ class _AuctionViewState extends State<AuctionView> {
   // Filter variables
   String _selectedCategory = 'All';
   String _sortBy = 'createdAt'; // createdAt, endTime, currentBid
-  bool _sortAscending = false;
+  final bool _sortAscending = false;
 
   final List<String> _categories = [
     'All',
@@ -104,6 +105,13 @@ class _AuctionViewState extends State<AuctionView> {
         appBarModel: AppBarModel(
           hasArrowBack: true,
           title: const Text('Auctions'),
+          actions: [
+            MyBidsButton(
+              iconColor: THelperFunctions.isDarkMode(context)
+                  ? TColors.white
+                  : TColors.dark,
+            ),
+          ],
         ),
       ),
       body: Column(
@@ -138,7 +146,7 @@ class _AuctionViewState extends State<AuctionView> {
                     // Category Filter
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         decoration: InputDecoration(
                           labelText: 'Category',
                           border: OutlineInputBorder(
@@ -169,7 +177,7 @@ class _AuctionViewState extends State<AuctionView> {
                     // Sort Filter
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _sortBy,
+                        initialValue: _sortBy,
                         decoration: InputDecoration(
                           labelText: 'Sort by',
                           border: OutlineInputBorder(
@@ -399,9 +407,9 @@ class _AuctionViewState extends State<AuctionView> {
                     // Auction Description
                     Text(
                       auction.description,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: TColors.grey),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: THelperFunctions.mutedTextColor(context),
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

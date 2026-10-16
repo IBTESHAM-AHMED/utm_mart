@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:utmmart/features/notifications/data/models/notification_model.dart';
+import 'package:utmmart/features/notifications/data/services/notification_service.dart';
+import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:utmmart/core/utils/constants/sizes.dart';
+import 'package:utmmart/features/shop/data/services/order_service.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/services/firebase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OrderListItem extends StatefulWidget {
-  final QueryDocumentSnapshot order;
+  final DocumentSnapshot order;
 
   const OrderListItem({super.key, required this.order});
 
@@ -18,6 +22,7 @@ class OrderListItem extends StatefulWidget {
 
 class _OrderListItemState extends State<OrderListItem> {
   final FirebaseService _firebaseService = sl<FirebaseService>();
+  final NotificationService _notificationService = NotificationService();
   Map<String, String?>? _vendorInfo;
   Map<String, String?>? _customerInfo;
 
@@ -42,9 +47,9 @@ class _OrderListItemState extends State<OrderListItem> {
     }
 
     if (data['vendorPhone'] == null && sellerUid != null) {
-      print('🔍 Loading seller info for ID: $sellerUid');
+      debugPrint('🔍 Loading seller info for ID: $sellerUid');
       final sellerInfo = await _getUserInfo(sellerUid);
-      print('📞 Seller info loaded: $sellerInfo');
+      debugPrint('📞 Seller info loaded: $sellerInfo');
       if (mounted) {
         setState(() {
           _vendorInfo = sellerInfo;
@@ -56,9 +61,9 @@ class _OrderListItemState extends State<OrderListItem> {
     if (data['customerPhone'] == null &&
         data['customerId'] != null &&
         data['isAuctionOrder'] == true) {
-      print('🔍 Loading customer info for ID: ${data['customerId']}');
+      debugPrint('🔍 Loading customer info for ID: ${data['customerId']}');
       final customerInfo = await _getUserInfo(data['customerId']);
-      print('📞 Customer info loaded: $customerInfo');
+      debugPrint('📞 Customer info loaded: $customerInfo');
       if (mounted) {
         setState(() {
           _customerInfo = customerInfo;
@@ -87,6 +92,13 @@ class _OrderListItemState extends State<OrderListItem> {
     final String formattedDate = DateFormat('dd MMM, yyyy').format(orderDate);
     final String formattedTime = DateFormat('HH:mm').format(orderDate);
 
+    final dark = THelperFunctions.isDarkMode(context);
+    final muted = THelperFunctions.mutedTextColor(context);
+    // Section accents: brighter shades on dark surfaces for contrast.
+    final blue = dark ? Colors.blue.shade200 : Colors.blue;
+    final green = dark ? Colors.green.shade300 : Colors.green;
+    final orange = dark ? Colors.orange.shade300 : Colors.orange;
+
     // Get status color and icon
     final statusInfo = _getStatusInfo(status);
 
@@ -112,7 +124,7 @@ class _OrderListItemState extends State<OrderListItem> {
                           Text(
                             'Order #${orderId.substring(0, 12)}',
                             style: Theme.of(context).textTheme.titleLarge
-                                ?.apply(fontWeightDelta: 2, color: Colors.blue),
+                                ?.apply(fontWeightDelta: 2, color: blue),
                           ),
                           const SizedBox(height: TSizes.xs / 2),
                           // Order Type Badge - Compact
@@ -166,7 +178,7 @@ class _OrderListItemState extends State<OrderListItem> {
                         '$formattedDate at $formattedTime',
                         style: Theme.of(
                           context,
-                        ).textTheme.bodySmall?.apply(color: Colors.grey[600]),
+                        ).textTheme.bodySmall?.apply(color: muted),
                       ),
                     ],
                   ),
@@ -209,28 +221,28 @@ class _OrderListItemState extends State<OrderListItem> {
             Container(
               padding: const EdgeInsets.all(TSizes.md),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
+                color: blue.withOpacity(dark ? 0.12 : 0.05),
                 borderRadius: BorderRadius.circular(TSizes.md),
-                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                border: Border.all(color: blue.withOpacity(dark ? 0.35 : 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.shopping_bag, color: Colors.blue, size: 20),
+                      Icon(Icons.shopping_bag, color: blue, size: 20),
                       const SizedBox(width: TSizes.sm),
                       Text(
                         'Order Items (${items.length})',
                         style: Theme.of(context).textTheme.titleMedium?.apply(
                           fontWeightDelta: 1,
-                          color: Colors.blue,
+                          color: blue,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: TSizes.sm),
-                  ...items.map((item) => _buildOrderItemRow(item)).toList(),
+                  ...items.map((item) => _buildOrderItemRow(item)),
                 ],
               ),
             ),
@@ -241,22 +253,22 @@ class _OrderListItemState extends State<OrderListItem> {
             Container(
               padding: const EdgeInsets.all(TSizes.md),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.05),
+                color: green.withOpacity(dark ? 0.12 : 0.05),
                 borderRadius: BorderRadius.circular(TSizes.md),
-                border: Border.all(color: Colors.green.withOpacity(0.2)),
+                border: Border.all(color: green.withOpacity(dark ? 0.35 : 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.receipt, color: Colors.green, size: 20),
+                      Icon(Icons.receipt, color: green, size: 20),
                       const SizedBox(width: TSizes.sm),
                       Text(
                         'Order Summary',
                         style: Theme.of(context).textTheme.titleMedium?.apply(
                           fontWeightDelta: 1,
-                          color: Colors.green,
+                          color: green,
                         ),
                       ),
                     ],
@@ -283,22 +295,22 @@ class _OrderListItemState extends State<OrderListItem> {
             Container(
               padding: const EdgeInsets.all(TSizes.md),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.05),
+                color: orange.withOpacity(dark ? 0.12 : 0.05),
                 borderRadius: BorderRadius.circular(TSizes.md),
-                border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                border: Border.all(color: orange.withOpacity(dark ? 0.35 : 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.contact_phone, color: Colors.orange, size: 20),
+                      Icon(Icons.contact_phone, color: orange, size: 20),
                       const SizedBox(width: TSizes.sm),
                       Text(
                         'Contact Information',
                         style: Theme.of(context).textTheme.titleMedium?.apply(
                           fontWeightDelta: 1,
-                          color: Colors.orange,
+                          color: orange,
                         ),
                       ),
                     ],
@@ -316,7 +328,7 @@ class _OrderListItemState extends State<OrderListItem> {
                               style: Theme.of(context).textTheme.labelMedium
                                   ?.apply(
                                     fontWeightDelta: 2,
-                                    color: Colors.orange[700],
+                                    color: orange,
                                   ),
                             ),
                             const SizedBox(height: TSizes.xs / 2),
@@ -339,7 +351,7 @@ class _OrderListItemState extends State<OrderListItem> {
                                   Icon(
                                     Icons.phone,
                                     size: 14,
-                                    color: Colors.orange[600],
+                                    color: orange,
                                   ),
                                   const SizedBox(width: TSizes.xs / 2),
                                   Text(
@@ -352,8 +364,8 @@ class _OrderListItemState extends State<OrderListItem> {
                                               (data['customerPhone'] ??
                                                       _customerInfo?['phone']) !=
                                                   null
-                                              ? Colors.orange[600]
-                                              : Colors.grey[600],
+                                              ? orange
+                                              : muted,
                                           decoration:
                                               (data['customerPhone'] ??
                                                       _customerInfo?['phone']) !=
@@ -378,7 +390,7 @@ class _OrderListItemState extends State<OrderListItem> {
                               style: Theme.of(context).textTheme.labelMedium
                                   ?.apply(
                                     fontWeightDelta: 2,
-                                    color: Colors.orange[700],
+                                    color: orange,
                                   ),
                             ),
                             const SizedBox(height: TSizes.xs / 2),
@@ -401,7 +413,7 @@ class _OrderListItemState extends State<OrderListItem> {
                                   Icon(
                                     Icons.phone,
                                     size: 14,
-                                    color: Colors.orange[600],
+                                    color: orange,
                                   ),
                                   const SizedBox(width: TSizes.xs / 2),
                                   Text(
@@ -414,8 +426,8 @@ class _OrderListItemState extends State<OrderListItem> {
                                               (data['vendorPhone'] ??
                                                       _vendorInfo?['phone']) !=
                                                   null
-                                              ? Colors.orange[600]
-                                              : Colors.grey[600],
+                                              ? orange
+                                              : muted,
                                           decoration:
                                               (data['vendorPhone'] ??
                                                       _vendorInfo?['phone']) !=
@@ -489,11 +501,33 @@ class _OrderListItemState extends State<OrderListItem> {
                       ),
                       icon: const Icon(Icons.check_circle, size: 16),
                       label: const Text(
-                        'Confirm',
+                        'Received',
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
+                if (status == 'shipped') ...[
+                  const SizedBox(width: TSizes.xs),
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showReturnConfirmation(context, orderId),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: TSizes.sm,
+                          vertical: TSizes.sm,
+                        ),
+                      ),
+                      icon: const Icon(Icons.undo, size: 16),
+                      label: const Text(
+                        'Return',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -504,6 +538,8 @@ class _OrderListItemState extends State<OrderListItem> {
 
   // Build order item row
   Widget _buildOrderItemRow(Map<String, dynamic> item) {
+    final dark = THelperFunctions.isDarkMode(context);
+    final muted = THelperFunctions.mutedTextColor(context);
     final String itemName = item['itemName'] ?? 'Unknown Item';
     final int quantity = item['quantity'] ?? 0;
     final double price = (item['itemPrice'] ?? 0.0).toDouble();
@@ -514,9 +550,11 @@ class _OrderListItemState extends State<OrderListItem> {
       margin: const EdgeInsets.only(bottom: TSizes.sm),
       padding: const EdgeInsets.all(TSizes.sm),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: dark ? Colors.white.withOpacity(0.06) : Colors.white,
         borderRadius: BorderRadius.circular(TSizes.sm),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(
+          color: dark ? Colors.white24 : Colors.grey.withOpacity(0.2),
+        ),
       ),
       child: Row(
         children: [
@@ -538,10 +576,10 @@ class _OrderListItemState extends State<OrderListItem> {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: dark ? Colors.white12 : Colors.grey[200],
                 borderRadius: BorderRadius.circular(TSizes.sm),
               ),
-              child: const Icon(Icons.image, color: Colors.grey),
+              child: Icon(Icons.image, color: muted),
             ),
 
           const SizedBox(width: TSizes.sm),
@@ -563,7 +601,7 @@ class _OrderListItemState extends State<OrderListItem> {
                 const SizedBox(height: 2),
                 Text(
                   'Qty: $quantity × RM${price.toStringAsFixed(2)}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(color: muted, fontSize: 12),
                 ),
               ],
             ),
@@ -572,10 +610,10 @@ class _OrderListItemState extends State<OrderListItem> {
           // Total Price
           Text(
             'RM${totalPrice.toStringAsFixed(2)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Colors.blue,
+              color: dark ? Colors.blue.shade200 : Colors.blue,
             ),
           ),
         ],
@@ -585,6 +623,7 @@ class _OrderListItemState extends State<OrderListItem> {
 
   // Build summary row
   Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    final dark = THelperFunctions.isDarkMode(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: TSizes.xs),
       child: Row(
@@ -602,8 +641,60 @@ class _OrderListItemState extends State<OrderListItem> {
             style: TextStyle(
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
               fontSize: isTotal ? 18 : 14,
-              color: isTotal ? Colors.blue : Colors.black,
+              color: isTotal
+                  ? (dark ? Colors.blue.shade200 : Colors.blue)
+                  : null,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Buyer didn't like the shipped item: cancel and send it back
+  void _showReturnConfirmation(BuildContext context, String orderId) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsOverflowButtonSpacing: 8,
+        title: const Text('Cancel and return?'),
+        content: const Text(
+          'The order will be cancelled and you hand the item back to the seller.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Keep order'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await OrderService().cancelOrder(orderId, byBuyer: true);
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Order cancelled'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(
+                    content: Text('Could not cancel: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cancel order'),
           ),
         ],
       ),
@@ -615,9 +706,11 @@ class _OrderListItemState extends State<OrderListItem> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsOverflowButtonSpacing: 8,
         title: const Text('Confirm Received'),
         content: const Text(
-          'Have you received this order? This will mark the order as received and close it.',
+          'Have you received this order? The seller will then confirm your cash payment to complete it.',
         ),
         actions: [
           TextButton(
@@ -630,6 +723,7 @@ class _OrderListItemState extends State<OrderListItem> {
               await _confirmReceived(orderId);
             },
             style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
@@ -640,102 +734,43 @@ class _OrderListItemState extends State<OrderListItem> {
     );
   }
 
-  // Confirm order as received and update stock
+  // Confirm order as received. Stock is only reduced at checkout.
   Future<void> _confirmReceived(String orderId) async {
     try {
-      print('🔍 Customer confirming order received: $orderId');
+      debugPrint('🔍 Customer confirming order received: $orderId');
 
-      // Get the order data first
-      final orderDoc = await _firebaseService.firestore
-          .collection('orders')
-          .doc(orderId)
-          .get();
-
-      if (!orderDoc.exists) {
-        print('❌ Order document does not exist: $orderId');
-        return;
-      }
-
-      final orderData = orderDoc.data() as Map<String, dynamic>;
-      final items = orderData['items'] as List<dynamic>? ?? [];
-
-      print('📦 Found ${items.length} items in order');
-
-      // Update stock for each item BEFORE updating order status
-      for (int i = 0; i < items.length; i++) {
-        final item = items[i];
-        final itemData = item as Map<String, dynamic>;
-        final itemId = itemData['itemId'] as String?;
-        final quantity = (itemData['quantity'] as int?) ?? 0;
-        final itemName = itemData['itemName'] as String? ?? 'Unknown';
-
-        print('🔍 Processing item $i: $itemName (ID: $itemId, Qty: $quantity)');
-
-        if (itemId != null && quantity > 0) {
-          try {
-            print('🔍 Getting store document for itemId: $itemId');
-
-            // Get the store document directly by itemId
-            final storeDoc = await _firebaseService.firestore
-                .collection('store')
-                .doc(itemId)
-                .get();
-
-            if (storeDoc.exists) {
-              final storeData = storeDoc.data() as Map<String, dynamic>;
-              final currentStock = (storeData['itemStock'] as int?) ?? 0;
-
-              print('📊 Store item found:');
-              print('   - Current stock: $currentStock');
-              print('   - Quantity to deduct: $quantity');
-
-              final newStock = currentStock - quantity;
-
-              // Ensure stock doesn't go below 0
-              final finalStock = newStock < 0 ? 0 : newStock;
-
-              print(
-                '🔄 Updating stock: $currentStock - $quantity = $finalStock',
-              );
-
-              await storeDoc.reference.update({
-                'itemStock': finalStock,
-                'updatedAt': FieldValue.serverTimestamp(),
-              });
-
-              print(
-                '✅ Successfully updated stock for item $itemId: $currentStock -> $finalStock',
-              );
-            } else {
-              print('❌ Store item not found: $itemId');
-            }
-          } catch (e) {
-            print('❌ Error updating stock for item $itemId: $e');
-          }
-        } else {
-          print('⚠️ Skipping item: itemId=$itemId, quantity=$quantity');
-        }
-      }
-
-      // Update order status to received AFTER stock is updated
       await _firebaseService.firestore.collection('orders').doc(orderId).update(
         {'status': 'received', 'updatedAt': FieldValue.serverTimestamp()},
       );
 
-      print('✅ Order status updated to received');
+      final orderData = widget.order.data() as Map<String, dynamic>;
+      final sellerIds = <String>{
+        if (orderData['sellerUid'] is String) orderData['sellerUid'] as String,
+        ...((orderData['sellerUids'] as List?) ?? const []).whereType<String>(),
+      };
+      for (final sellerId in sellerIds) {
+        await _notificationService.notifyUser(
+          userId: sellerId,
+          title: 'Order Received',
+          message:
+              'The customer confirmed order #${orderId.substring(0, 8)} as received',
+          type: NotificationType.orderStatusChange,
+          data: {'orderId': orderId, 'newStatus': 'received', 'sellerTab': 1, 'asSeller': true},
+        );
+      }
+
+      debugPrint('✅ Order status updated to received');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Order confirmed as received! Stock has been updated.',
-            ),
+            content: Text('Order confirmed as received!'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      print('❌ Error confirming order: $e');
+      debugPrint('❌ Error confirming order: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -859,7 +894,7 @@ class _OrderListItemState extends State<OrderListItem> {
 
   Future<Map<String, String?>> _getUserInfo(String userId) async {
     try {
-      print('🔍 Fetching user info for ID: $userId');
+      debugPrint('🔍 Fetching user info for ID: $userId');
       final userDoc = await _firebaseService.firestore
           .collection('users')
           .doc(userId)
@@ -867,20 +902,20 @@ class _OrderListItemState extends State<OrderListItem> {
 
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
-        print('✅ User document found: $userData');
+        debugPrint('✅ User document found: $userData');
         final result = <String, String?>{
           'name': '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
               .trim(),
           'phone': userData['phoneNumber'] ?? '',
         };
-        print('📞 Processed user info: $result');
+        debugPrint('📞 Processed user info: $result');
         return result;
       } else {
-        print('❌ User document not found for ID: $userId');
+        debugPrint('❌ User document not found for ID: $userId');
         return {'name': 'Unknown User', 'phone': ''};
       }
     } catch (e) {
-      print('❌ Error getting user info for $userId: $e');
+      debugPrint('❌ Error getting user info for $userId: $e');
       return {'name': 'Unknown User', 'phone': ''};
     }
   }

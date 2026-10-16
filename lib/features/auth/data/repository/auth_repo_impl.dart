@@ -1,9 +1,11 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/core/utils/helpers/send_mail_helper.dart';
  import 'package:utmmart/features/auth/data/data_sources/auth_local_data_source.dart';
 import 'package:utmmart/features/auth/data/data_sources/auth_remote_data_source.dart';
+import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
 import 'package:utmmart/features/auth/data/models/change_password_req_body.dart';
 import 'package:utmmart/features/auth/data/models/change_password_response.dart';
 import 'package:utmmart/features/auth/data/models/login_req_body.dart';
@@ -46,7 +48,17 @@ class AuthRepoImpl implements AuthRepo {
   // You might want to add these additional methods to your AuthRepo interface
   @override
   Future<void> logout() async {
-    await sl<AuthLocalDataSource>().clearUserData();
+    try {
+      await sl<AuthLocalDataSource>().clearUserData();
+    } finally {
+      // Always end the Firebase session, even if clearing the local cache
+      // failed. signOut() reports failure as Left rather than throwing.
+      final result = await sl<FirebaseAuthService>().signOut();
+      result.fold(
+        (error) => debugPrint('Firebase sign out failed: $error'),
+        (_) {},
+      );
+    }
   }
 
   @override

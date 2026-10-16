@@ -106,7 +106,7 @@ class VerticalProductCard extends StatelessWidget {
                     Text(
                       'Sold by ${product.vendorName ?? 'Unknown Seller'}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: TColors.grey,
+                        color: THelperFunctions.mutedTextColor(context),
                         fontSize: 10,
                       ),
                       maxLines: 1,

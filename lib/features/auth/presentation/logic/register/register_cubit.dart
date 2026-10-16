@@ -11,6 +11,7 @@ class RegisterCubit extends Cubit<RegisterState> {
     emit(state.copyWith(status: RegisterStatus.loading));
 
     final result = await sl<FirebaseRegisterUsecase>().call(param: params);
+    if (isClosed) return;
 
     result.fold(
       (error) {

@@ -9,6 +9,7 @@ import 'package:utmmart/core/utils/helpers/helper_functions.dart';
 import 'package:utmmart/core/depandancy_injection/service_locator.dart';
 import 'package:utmmart/features/auth/data/data_sources/firebase_auth_service.dart';
 import 'package:utmmart/features/auth/data/models/firestore_user_model.dart';
+import 'package:utmmart/features/shop/data/services/cart_service.dart';
 import 'package:utmmart/features/shop/presentation/views/cart_view.dart';
 import 'package:utmmart/features/personalization/presentation/views/profile_view.dart';
 
@@ -21,11 +22,13 @@ class HomeAppBar extends StatefulWidget {
 
 class _HomeAppBarState extends State<HomeAppBar> {
   final FirebaseAuthService _authService = sl<FirebaseAuthService>();
+  final CartService _cartService = sl<CartService>();
   FirestoreUserModel? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    _cartService.refreshItemCount();
     _loadUserData();
   }
 
@@ -34,7 +37,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
     result.fold(
       (error) {
         // Handle error silently or show default data
-        print('Error loading user data: $error');
+        debugPrint('Error loading user data: $error');
       },
       (user) {
         if (mounted) {
@@ -134,12 +137,16 @@ class _HomeAppBarState extends State<HomeAppBar> {
           ),
         ),
         actions: [
-          CartCounterIcon(
-            cartCounterIconModel: CartCounterIconModel(
-              color: TColors.white,
-              onPressed: () {
-                THelperFunctions.navigateToScreen(context, const CartView());
-              },
+          ValueListenableBuilder<int>(
+            valueListenable: _cartService.itemCount,
+            builder: (context, count, _) => CartCounterIcon(
+              cartCounterIconModel: CartCounterIconModel(
+                color: TColors.white,
+                count: count,
+                onPressed: () {
+                  THelperFunctions.navigateToScreen(context, const CartView());
+                },
+              ),
             ),
           ),
         ],

@@ -42,7 +42,7 @@ packages:
     source: hosted
     version: "2.13.0"
   bloc:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: bloc
       sha256: "52c10575f4445c61dd9e0cafcc6356fdd827c4c64dd7945ef3c4105f6b6ac189"
@@ -81,14 +81,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.1"
-  capped_progress_indicator:
-    dependency: "direct main"
-    description:
-      name: capped_progress_indicator
-      sha256: dd71156a63d990d581c1e35d02b39945c4fb51ca82ada9547ec0c2388924f20c
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.2"
   carousel_slider:
     dependency: "direct main"
     description:
@@ -447,7 +439,7 @@ packages:
     source: hosted
     version: "5.2.1"
   flutter_launcher_icons:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: flutter_launcher_icons
       sha256: "10f13781741a2e3972126fae08393d3c4e01fa4cd7473326b94b72cf594195e7"
@@ -463,7 +455,7 @@ packages:
     source: hosted
     version: "5.0.0"
   flutter_native_splash:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: flutter_native_splash
       sha256: "8321a6d11a8d13977fa780c89de8d257cce3d841eecfb7a4cadffcc4f12d82dc"
@@ -600,54 +592,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "8.0.3"
-  google_identity_services_web:
-    dependency: transitive
-    description:
-      name: google_identity_services_web
-      sha256: "5d187c46dc59e02646e10fe82665fc3884a9b71bc1c90c2b8b749316d33ee454"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.3+1"
-  google_sign_in:
-    dependency: "direct main"
-    description:
-      name: google_sign_in
-      sha256: b15bff04ca1ba9c2900c9bf2ed9179f06a1eff8dad258b401a89da69491254fc
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.1.0"
-  google_sign_in_android:
-    dependency: transitive
-    description:
-      name: google_sign_in_android
-      sha256: dc03996c6f95ef8191bae220006029f8cec6a83d6c03c43191ca8cd35e5bbbcb
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.1"
-  google_sign_in_ios:
-    dependency: transitive
-    description:
-      name: google_sign_in_ios
-      sha256: "59937a674827540d12253415626ec24cc7e633bb785e2d2ca4f1580323e55a0c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.0"
-  google_sign_in_platform_interface:
-    dependency: transitive
-    description:
-      name: google_sign_in_platform_interface
-      sha256: "8736443134d2cccadd4f228d600177cb3947e36683466a6ab96877ce6932885a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
-  google_sign_in_web:
-    dependency: transitive
-    description:
-      name: google_sign_in_web
-      sha256: "09ac306b2787b48f19c857b9f93375b654f774643c75bd6a1a078c85f4f7b468"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   gsettings:
     dependency: transitive
     description:
@@ -824,14 +768,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
-  lottie:
-    dependency: "direct main"
-    description:
-      name: lottie
-      sha256: c5fa04a80a620066c15cf19cc44773e19e9b38e989ff23ea32e5903ef1015950
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.3.1"
   mailer:
     dependency: "direct main"
     description:
