@@ -112,6 +112,22 @@ class AuctionFirestoreService {
         transaction.update(auctionRef, updatedAuction.toFirestore());
       });
 
+      // Tell the seller someone bid on their auction (notifyUser never throws)
+      if (auction != null && auction!.sellerUid != bid.bidderUid) {
+        await _notificationService.notifyUser(
+          userId: auction!.sellerUid,
+          title: 'New Bid on Your Auction',
+          message:
+              '${bid.bidderName} bid RM${bid.amount.toStringAsFixed(2)} on "${auction!.title}"',
+          type: NotificationType.auctionNewBid,
+          data: {
+            'auctionId': auctionId,
+            'auctionTitle': auction!.title,
+            'newHighestBid': bid.amount,
+          },
+        );
+      }
+
       // Notify previous highest bidder if they were outbid
       if (auction != null && auction!.bids.isNotEmpty) {
         final previousHighestBid = auction!.bids.reduce(

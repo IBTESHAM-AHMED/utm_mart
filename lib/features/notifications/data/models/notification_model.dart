@@ -5,6 +5,7 @@ enum NotificationType {
   orderStatusChange,
   orderWaitingApproval,
   auctionOutbid,
+  auctionNewBid,
   auctionWon,
   auctionEnded,
   auctionCreated,
@@ -107,6 +108,8 @@ class NotificationModel extends Equatable {
         return 'waiting_approval';
       case NotificationType.auctionOutbid:
         return 'auction_outbid';
+      case NotificationType.auctionNewBid:
+        return 'auction_new_bid';
       case NotificationType.auctionWon:
         return 'auction_won';
       case NotificationType.auctionEnded:
@@ -127,6 +130,8 @@ class NotificationModel extends Equatable {
         return '#FF9800'; // Orange
       case NotificationType.auctionOutbid:
         return '#F44336'; // Red
+      case NotificationType.auctionNewBid:
+        return '#FF9800'; // Orange
       case NotificationType.auctionWon:
         return '#4CAF50'; // Green
       case NotificationType.auctionEnded:

@@ -34,7 +34,8 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
   final _startingPriceController = TextEditingController();
 
   String _selectedCategory = 'Electronics';
-  DateTime _endTime = DateTime.now().add(const Duration(days: 7));
+  // TEMP-TEST: revert to Duration(days: 7)
+  DateTime _endTime = DateTime.now().add(const Duration(minutes: 5));
   FirestoreUserModel? _currentUser;
   bool _isSubmitting = false;
   File? _selectedImage;
@@ -375,7 +376,7 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
                   final date = await showDatePicker(
                     context: context,
                     initialDate: _endTime,
-                    firstDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(), // TEMP-TEST: revert to .add(const Duration(days: 1))
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                   );
                   if (!mounted) return;
@@ -385,15 +386,23 @@ class _CreateAuctionViewState extends State<CreateAuctionView> {
                       initialTime: TimeOfDay.fromDateTime(_endTime),
                     );
                     if (time != null) {
-                      setState(() {
-                        _endTime = DateTime(
-                          date.year,
-                          date.month,
-                          date.day,
-                          time.hour,
-                          time.minute,
+                      final picked = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        time.hour,
+                        time.minute,
+                      );
+                      // TEMP-TEST: same-day end times need this guard
+                      if (!picked.isAfter(DateTime.now())) {
+                        THelperFunctions.showSnackBar(
+                          context: context,
+                          message: 'End time must be in the future',
+                          type: SnackBarType.error,
                         );
-                      });
+                        return;
+                      }
+                      setState(() => _endTime = picked);
                     }
                   }
                 },

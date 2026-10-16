@@ -161,6 +161,8 @@ class NotificationItem extends StatelessWidget {
         return Iconsax.clock;
       case NotificationType.auctionOutbid:
         return Iconsax.arrow_down;
+      case NotificationType.auctionNewBid:
+        return Iconsax.timer_1;
       case NotificationType.auctionWon:
         return Iconsax.crown;
       case NotificationType.auctionEnded:
@@ -180,6 +182,8 @@ class NotificationItem extends StatelessWidget {
         return Colors.orange;
       case NotificationType.auctionOutbid:
         return Colors.red;
+      case NotificationType.auctionNewBid:
+        return Colors.orange;
       case NotificationType.auctionWon:
         return Colors.green;
       case NotificationType.auctionEnded:

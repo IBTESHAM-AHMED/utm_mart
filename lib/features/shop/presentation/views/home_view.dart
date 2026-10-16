@@ -14,6 +14,7 @@ import 'package:utmmart/features/shop/data/services/store_firestore_service.dart
 import 'package:utmmart/features/shop/presentation/views/store_view.dart';
 import 'package:utmmart/features/shop/presentation/views/store_item_detail_view.dart';
 import 'package:utmmart/features/shop/presentation/widgets/home_header_section.dart';
+import 'package:utmmart/features/shop/presentation/widgets/live_auctions_section.dart';
 import 'package:utmmart/features/shop/presentation/widgets/promo_banner_carousel_slider.dart';
 
 class HomeViewShimmer extends StatelessWidget {
@@ -265,6 +266,7 @@ class _HomeViewState extends State<HomeView> {
                   );
                 },
               ),
+              const LiveAuctionsSection(),
             ],
           ),
         ),
